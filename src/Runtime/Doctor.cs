@@ -130,7 +130,8 @@ namespace Icm
             string dir = kb.Path;
             if (!File.Exists(Path.Combine(dir, Conventions.ManifestFile))) { ok = false; detail = "no manifest (ratchet index " + dir + ")"; return; }
             int files = 0, entries = 0;
-            try { files = Directory.GetFiles(dir, "*.md", SearchOption.AllDirectories).Length; } catch { }
+            // Count .md the way the indexer does: README.md folder guides are skipped (not routable).
+            try { foreach (string fp in Directory.GetFiles(dir, "*.md", SearchOption.AllDirectories)) { if (!Path.GetFileName(fp).Equals("README.md", StringComparison.OrdinalIgnoreCase)) files++; } } catch { }
             try { entries = Indexer.LoadManifestMap(dir).Count; } catch { }
             ok = (entries == files);
             detail = ok ? (files + " docs, manifest current") : ("drift: " + files + " docs vs " + entries + " entries (reindex)");
