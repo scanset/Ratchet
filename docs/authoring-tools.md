@@ -1,6 +1,6 @@
 # Authoring tools
 
-A tool is a script (or external program) the host runs deterministically. Tools are where an instance
+A tool is a script (or external program) the host runs deterministically. Tools are where a ratchet
 does real work: compile, parse, scaffold, build, validate, launch. The model never invents a tool's
 command - it only fills declared arguments. This is the technical how-to; tools are invoked by
 `action` nodes ([authoring-flows.md](authoring-flows.md)) or directly with `/do`.
@@ -33,7 +33,7 @@ manifest entry is still callable by name as a zero-argument convention script.
 }
 ```
 
-- **`name`** - unique within the instance (the namespace check enforces it; chain + tool names share
+- **`name`** - unique within the ratchet (the namespace check enforces it; chain + tool names share
   one flat namespace).
 - **`description`** - what a caller (a frontier model over MCP, or you) sees.
 - **`command`** - the argv array to run. **Not a shell string** - so argument values present no
@@ -48,7 +48,7 @@ manifest entry is still callable by name as a zero-argument convention script.
 
 When the host runs a tool it:
 
-1. sets the **working directory to the instance root** (so `tools/...` and relative paths resolve);
+1. sets the **working directory to the ratchet root** (so `tools/...` and relative paths resolve);
 2. substitutes each `{arg}` in the `command` argv from the call's arguments;
 3. if `stdin` is set, pipes that argument to standard input instead of argv;
 4. enforces `timeout`, and captures **stdout, stderr, and the exit code**;
@@ -87,7 +87,7 @@ if ($LASTEXITCODE -ne 0) { exit 1 }            # non-zero -> on_failure (the rep
 - **Over MCP** - `tools/list` advertises every declared tool with its `inputSchema`; `tools/call`
   runs it through this same contract. (See [mcp.md](mcp.md).)
 
-## Patterns from the C# reference instance
+## Patterns from the C# reference ratchet
 
 `examples/dotnet/tools/` shows the common shapes:
 
@@ -102,7 +102,7 @@ if ($LASTEXITCODE -ne 0) { exit 1 }            # non-zero -> on_failure (the rep
 
 ## Security
 
-A tool runs with **your privileges** - that is the trust boundary, and why you only open instances you
+A tool runs with **your privileges** - that is the trust boundary, and why you only open ratchets you
 trust ([SECURITY.md](../SECURITY.md)). Context Binding controls *what data flows into* a tool call
 (arguments come from declared, origin-tagged slots, not free model output); it does not sandbox the
 tool itself. Keep `command` an argv array, validate inputs with `inputSchema`, and never build a tool

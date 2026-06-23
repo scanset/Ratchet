@@ -1,9 +1,0 @@
-{
-  "$comment": "winforms: generate a complete WinForms C# program, compile it as a winexe (csc_winforms, the oracle), repair once if it does not build.",
-  "id": "winforms",
-  "version": "1.0.0",
-  "summary": "Generate a WinForms desktop GUI app (a window with controls and events), compile it as a winexe, and repair once if it does not build.",
-  "entry": "winforms.generate",
-  "budgets": { "max_steps": 10, "max_total_tokens": 14000, "max_wallclock_seconds": 600 },
-  "nodes": ["winforms.generate", "winforms.compile", "winforms.fix", "winforms.recompile", "winforms.done", "winforms.fail"]
-}

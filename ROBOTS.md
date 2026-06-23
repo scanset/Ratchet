@@ -1,7 +1,7 @@
 # ROBOTS.md - orientation for AI agents
 
 You are an AI agent (any model) working on or with **Ratchet**. This is your quick reference. Humans:
-see [README.md](README.md). Deep dives in [docs/](docs/): `architecture`, `instances`, `console`,
+see [README.md](README.md). Deep dives in [docs/](docs/): `architecture`, `ratchets`, `console`,
 `mcp`, plus the technical guides `context-binding`, `authoring-flows`, `authoring-tools`, and the
 `gemini-hack`.
 
@@ -10,15 +10,15 @@ see [README.md](README.md). Deep dives in [docs/](docs/): `architecture`, `insta
 - **What.** A Windows-native host that runs a small **local** model as a *constrained proposer*: the
   model proposes into a fixed chain of steps, a deterministic **Oracle** (a compiler, a parser, a
   table validator) accepts or rejects each step, and the chain advances only on a pass. The host is a
-  domain-agnostic harness; all domain logic lives in *instances* it loads.
+  domain-agnostic harness; all domain logic lives in the *ratchets* it loads.
 - **Why.** A weak local model is unreliable as a decider or in an open tool loop. Structure plus the
   Oracle make it reliable: it only ever proposes into a narrow, scoped, checked slot.
 - **Who.** A human operator drives from the console (or a frontier model drives over MCP). The local
   model never picks actions; it fills slots. You, the agent reading this, are usually editing the host
-  (`src/`) or authoring an instance (`examples/`).
+  (`src/`) or authoring a ratchet (cloned from RatchetBox).
 - **Where.** **Windows only, for now.** It builds with the in-box .NET Framework `csc.exe` (no
   SDK/NuGet/MSBuild), runs PowerShell tools, and uses SAC-safe launchers - all Windows-specific. Talks
-  to a local [Ollama](https://ollama.com). Instances live under `examples/` or anywhere on disk.
+  to a local [Ollama](https://ollama.com). Ratchets live in the companion RatchetBox repo, or anywhere on disk.
 - **When.** Use Ratchet for bounded, *verifiable* generation - code that must compile, a row that must
   validate, an edit that must still build. Not for open-ended agentic roaming.
 
@@ -31,7 +31,17 @@ Two ideas are Ratchet's own; know them by name:
 (Lineage: structure-as-architecture is from ICM; RAG is a technique; the action-chain + Context
 Binding model is Ratchet's. Don't call Ratchet "just ICM.")
 
-## The prime directive: do not blur the host/instance boundary
+## Vocabulary
+
+- **Ratchet** - the engine (`ratchet.exe`). It runs ratchets.
+- **a ratchet** - a self-contained unit: a directory with `ratchet.json` plus `flows/`, `tools/`,
+  `kb/`. You point the engine at one: `ratchet <dir>`.
+- **flows** - action chains (the LLM-native `make`): model proposes into fixed slots, Oracle verifies.
+- **tools** - deterministic scripts/oracles a flow invokes (or you, via `/do`).
+- **kb** - indexed knowledge retrieved per step (Context Binding).
+- **workspaces** - the projects a ratchet builds; the active one is `$workspace`.
+
+## The prime directive: do not blur the host/ratchet boundary
 
 The binary in `src/` is a **generic harness** - never put domain logic or a specific chain/tool/kb
 name in it.
@@ -39,10 +49,10 @@ name in it.
 - **Host (harness):** the chain engine (`Runtime/ChainEngine.cs`), dispatcher (`Dispatcher.cs`), the
   oracle *mechanism* (`Oracle.cs` TSV validator), search/embed (`KbIndex`/`Search`/`Embedder`), MCP
   (`Server/Mcp.cs`), and the generic verbs (`/search`, `/route`, `/flow`, `/do`, `/ws`, `/propose`).
-- **Instance (domain):** every concrete chain, tool/script, knowledge base, and table schema. C# /
+- **Ratchet (domain):** every concrete chain, tool/script, knowledge base, and table schema. C# /
   PowerShell / compile / launch specifics live ONLY here.
 
-To add a capability, add a **chain or tool in an instance** and invoke it generically - do not add a
+To add a capability, add a **chain or tool in a ratchet** and invoke it generically - do not add a
 host command. New chains/tools need no rebuild (discovered at runtime); only engine changes do.
 
 ## Build & verify (after any src change)
@@ -51,7 +61,8 @@ host command. New chains/tools need no rebuild (discovered at runtime); only eng
 powershell -ExecutionPolicy Bypass -File build.ps1          # console only (default): ratchet.exe
 powershell -ExecutionPolicy Bypass -File build.ps1 -Gui     # also the legacy ratchet-gui.exe
 .\ratchet.cmd selftest                                       # deterministic core, model-free
-.\ratchet.cmd validate-flow examples\dotnet                  # lint the example chains
+.\ratchet.cmd validate-flow ..\RatchetBox\dotnet4-x          # lint a ratchet's chains (clone RatchetBox alongside)
+.\ratchet.cmd doctor ..\RatchetBox\dotnet4-x                 # preflight a ratchet's declared toolchain
 ```
 
 Only chat / generation / search need a running Ollama. Model-free smokes: `project-smoke.ps1` (the
@@ -60,7 +71,7 @@ project tool chain) and `mcp-smoke.ps1` (the MCP handshake + a tool call) - both
 ## Hard constraints (these bite)
 
 - **C# 5 only** (the in-box compiler is pre-Roslyn): NO string interpolation (`$"..."`), NO `?.`, NO
-  expression-bodied members, NO tuples. Instance prompts forbid `$"..."` because the local model
+  expression-bodied members, NO tuples. A ratchet's prompts forbid `$"..."` because the local model
   reaches for it and the compiler rejects it.
 - **Smart App Control blocks the unsigned `.exe`.** Use `.\ratchet.cmd ...`, never the bare exe. Built
   app exes are also unsigned - the `make_launcher` tool writes a `.cmd` that loads them in-memory. Do
@@ -78,18 +89,20 @@ src/Runtime/         engine: Instance, Oracle, Tsv, ToolRunner, Ollama, Dispatch
 src/Server/Mcp.cs    MCP server (tools/list + tools/call)
 src/Cli/             console exe: Program, ConsoleChat, SelfTest
 src/Gui/             legacy WinForms exe (built only with -Gui)
-examples/template/   empty instance skeleton to copy
-examples/dotnet/     C# reference instance (chains, tools, kb, Tests/ with real I/O logs)
-docs/                deep dives: architecture, instances, console, mcp, context-binding,
+docs/                deep dives: architecture, ratchets, console, mcp, context-binding,
                      authoring-flows, authoring-tools, gemini-hack
 ```
 
+Ratchet ships no bundled ratchets - ready-made ones (the C# `dotnet4-x`, `cpp`, and the `template`
+skeleton) live in the companion repo **[RatchetBox](https://github.com/CurtisSlone/RatchetBox)**. Clone
+it alongside this repo and point `ratchet` at a ratchet there.
+
 ---
 
-# Authoring an instance
+# Authoring a ratchet
 
-An instance is `ratchet.json` + four buckets (`kb/`, `flows/`, `tools/`, `schemas/`+`samples/`) +
-`workspaces/`. Copy `examples/template` to start. Full contract: [docs/instances.md](docs/instances.md).
+A ratchet is `ratchet.json` + four buckets (`kb/`, `flows/`, `tools/`, `schemas/`+`samples/`) +
+`workspaces/`. Copy `template` to start. Full contract: [docs/ratchets.md](docs/ratchets.md).
 
 ## Knowledge bases: create, index, add
 
@@ -100,7 +113,7 @@ lines sharp - they are what routing sees. `README.md` folder guides are skipped.
 **Index** - build the routing index from content (deterministic, no model):
 
 ```
-.\ratchet.cmd index examples\template\kb      # writes kb/manifest.json
+.\ratchet.cmd index <ratchet-dir>\kb      # writes kb/manifest.json
 ```
 
 Re-run after adding or editing entries.
@@ -165,8 +178,8 @@ The canonical shape is **generate -> check -> repair** (unrolled, so it lints cl
 `fix` is a `generate` node fed the oracle's errors + the previous attempt; `recheck` re-runs the tool.
 To repair twice, add a `fix2`/`recheck2` pair and point `recheck.on_failure` at `fix2`. **Lint**:
 `.\ratchet.cmd validate-flow <dir> [name]` (checks node kinds, fields, unknown tools, reachability,
-name clashes). Working examples: `examples/template/flows/draft`,
-`examples/dotnet/flows/{csharp,add_file,edit_file}`. **Deep dive:**
+name clashes). Working examples: `template/flows/draft`,
+`dotnet4-x/flows/{csharp,add_file,edit_file}`. **Deep dive:**
 [docs/authoring-flows.md](docs/authoring-flows.md).
 
 ## Tools: create a script the host runs
@@ -184,7 +197,7 @@ is callable by name (zero-arg).
 ] }
 ```
 
-Contract: the host runs the command with the **instance root as cwd**, substitutes `{arg}` into the
+Contract: the host runs the command with the **ratchet root as cwd**, substitutes `{arg}` into the
 argv from the call's arguments (argv array, so no shell-injection), pipes one arg to stdin instead when
 `"stdin"` names it (use for large payloads like source - it arrives with a BOM, strip it), enforces
 `timeout` seconds, and treats the **exit code as the oracle verdict** (0 = on_success). The author
@@ -201,7 +214,7 @@ as `$workspace`.
 /ws switch <name>      # activate an existing one
 ```
 
-For a buildable project, a domain tool scaffolds the structure - in the C# instance,
+For a buildable project, a domain tool scaffolds the structure - in the C# ratchet,
 `/do new_project <name> [console|winforms]` writes `workspaces/<name>/` with `src/`, `response.rsp`,
 `build.ps1`, `project.json`. Then project chains (`add_file`, `edit_file`) operate on the active
 workspace: generate -> stage -> build the whole project (oracle) -> repair -> record. Relocate the
@@ -222,11 +235,11 @@ Plain text = ungrounded chat. Commands: `/search [src] <q>` (grounded answer), `
 ## Over MCP (a frontier model drives)
 
 ```
-.\ratchet.cmd mcp <dir>     # stdio JSON-RPC: tools/list advertises the instance's tools; tools/call runs them
+.\ratchet.cmd mcp <dir>     # stdio JSON-RPC: tools/list advertises the ratchet's tools; tools/call runs them
 ```
 
 Point MCP clients at `run-cli.ps1` (not the bare exe - SAC). Same engine the console uses: the
-frontier model browses + calls while the local model fills the oracle-checked slots; the instance's
+frontier model browses + calls while the local model fills the oracle-checked slots; the ratchet's
 declared tools are the blast radius. Connection recipes (Claude Desktop / Claude Code) are in
 [docs/mcp.md](docs/mcp.md). (Pending: KB-browse built-ins `catalog`/`read_entry` still read a retired
 root manifest; calling declared tools works today.)
@@ -234,20 +247,20 @@ root manifest; calling declared tools works today.)
 ## Let a frontier model write your prompts (the Gemini hack)
 
 No MCP setup needed: point a browser frontier model (Gemini in Chrome, ChatGPT, Claude) at this repo's
-docs + an instance's `kb`/`flows`/`tools` manifests and have it author ready-to-paste console prompts -
+docs + a ratchet's `kb`/`flows`/`tools` manifests and have it author ready-to-paste console prompts -
 frontier-quality planning, local verified execution, by copy-paste. Full recipe (and the prompt to
 give it): [docs/gemini-hack.md](docs/gemini-hack.md).
 
 **What a frontier model reads to write exact commands + prompts** (don't invent commands not in these):
 
-- **`examples/dotnet/Tests/WINFORMS_TEST_LOG.md`** - real console traces: exact inputs/outputs, proof
+- **`dotnet4-x/Tests/WINFORMS_TEST_LOG.md`** - real console traces: exact inputs/outputs, proof
   that Ratchet keeps no chat tape (state lives on disk in `project.json` + the source tree + `runs/`,
   so commands are discrete), and the concrete **current** command syntax. (`COMPLEX_TEST_LOG.md` beside
   it is a *pre-rework* transcript - it shows the retired `/new`//`add`//`build`; use the verbs below.)
-- **`examples/<instance>/SYSTEM.md`** (indexed via `kb/manifest.json`) - the hard limits: pre-Roslyn
+- **`a ratchet/SYSTEM.md`** (indexed via `kb/manifest.json`) - the hard limits: pre-Roslyn
   **C# 5** (no string interpolation, expression-bodied members, `?.`, tuples). Tailor `add_file`/
   `edit_file` prompts to avoid C# 6+ so the `csc` oracle doesn't trip.
-- **`examples/<instance>/STRUCTURE.md`** - the layout: `tools/` (automation) + `flows/` (chains).
+- **`a ratchet/STRUCTURE.md`** - the layout: `tools/` (automation) + `flows/` (chains).
 - **`flows/*/chain.json` + `tools/manifest.json`** - the chains and tools that actually exist.
 
 Current "start a new app" command set (not the retired `/new`//`add`//`build`): `/do new_project <name>
@@ -256,7 +269,7 @@ Current "start a new app" command set (not the retired `/new`//`add`//`build`): 
 
 ## See real input/output: the Tests/ dir
 
-`examples/dotnet/Tests/` holds transcripts of building real projects with Ratchet:
+`dotnet4-x/Tests/` holds transcripts of building real projects with Ratchet:
 - **`COMPLEX_TEST_LOG.md`** - multi-file C# projects (interface + driver + model + entry).
 - **`WINFORMS_TEST_LOG.md`** - runnable WinForms apps, increasing complexity, incl. a failure-and-fix.
 

@@ -77,7 +77,18 @@ namespace Icm
                 {
                     Dictionary<string, string> slots = ResolveSlots(a, state);
                     string outp;
-                    try { outp = disp.Generate(Render(ReadPrompt(a), slots), 0.2); }
+                    try
+                    {
+                        string gp = Render(ReadPrompt(a), slots);
+                        if (a.OutputSchema != null)
+                        {
+                            // Structured generate: force the declared schema and store the raw JSON so
+                            // later bindings can pull individual fields via their `path` (JSON pointer).
+                            Dictionary<string, object> jv = Ollama.GenerateJson(disp.Url, icm.Config.Models.Generate, gp, a.OutputSchema, 0.2, DecideTimeoutMs, new Cancel());
+                            outp = Json.Serialize(jv);
+                        }
+                        else { outp = disp.Generate(gp, 0.2); }
+                    }
                     catch (IcmError e) { res.IsError = true; res.Outcome = "aborted: " + e.Message; break; }
                     state[a.Id] = outp; lastOutput = outp;
                     WriteState(runId, "step-" + n.ToString("000") + ".json", Json.Obj("node", a.Id, "kind", a.Kind, "output", Cap(outp, 4000)));
@@ -132,13 +143,29 @@ namespace Icm
             {
                 if (string.IsNullOrEmpty(ib.As)) continue;
                 string val = "";
-                if (ib.Source == "from") { string v; val = state.TryGetValue(ib.From, out v) ? v : ""; }
+                if (ib.Source == "from") { string v; val = ApplyPath(state.TryGetValue(ib.From, out v) ? v : "", ib.Path); }
                 else if (ib.Source == "ref") val = ResolveRef(ib);
                 else if (ib.Source == "search") val = ResolveSearch(ib, slots);   // may reference earlier slots
                 if (ib.MaxChars > 0 && val.Length > ib.MaxChars) val = val.Substring(0, ib.MaxChars);
                 slots[ib.As] = val;
             }
             return slots;
+        }
+
+        // Pull a field out of a prior node's output when the binding declares a `path` other than ".".
+        // The path is a JSON pointer (a bare field name like "cppref_q" is treated as "/cppref_q") into a
+        // structured (output_schema) generate result. "." or empty returns the whole value; non-JSON or a
+        // missing field yields "". This is what lets a plan node route per-field into different searches.
+        private static string ApplyPath(string raw, string path)
+        {
+            if (string.IsNullOrEmpty(path) || path == ".") return raw;
+            object root;
+            try { root = Json.Parse(raw); } catch { return ""; }
+            string ptr = path.StartsWith("/") ? path : "/" + path;
+            object node = Json.Pointer(root, ptr);
+            if (node == null) return "";
+            string s = node as string;
+            return s != null ? s : Json.Serialize(node);
         }
 
         private string ResolveRef(InputBinding ib)

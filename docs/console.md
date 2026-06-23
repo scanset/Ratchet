@@ -1,6 +1,6 @@
 # Operating the console
 
-`ratchet <dir>` opens the Ratchet console on an instance. You plan in plain language and act with slash
+`ratchet <dir>` opens the Ratchet console on a ratchet. You plan in plain language and act with slash
 commands. The console never lets the weak local model decide what runs.
 
 ## How a turn is dispatched
@@ -25,7 +25,7 @@ gate keeps only a confident, on-list match and you confirm before it runs.
 | `/do <shell command>` | run a PowerShell command you paste; its output enters the session context |
 | `/propose <description>` | propose a table row; the oracle gates it, with bounded repair |
 | `/ws switch\|create <name>` | switch to / create the active workspace (the session focus) |
-| `/flows` | list the instance's action chains (what `/route` can match) |
+| `/flows` | list the ratchet's action chains (what `/route` can match) |
 | `/note <text>` / `/notes` | append to / read session memory (`NOTES.md`) |
 | `/help` | list commands; `/clear` reset history; `/quit` exit |
 
@@ -43,7 +43,7 @@ the model can only pick from chains that exist.
 
 ## Model seats
 
-A turn uses up to two seats, set per instance in `ratchet.json`:
+A turn uses up to two seats, set per ratchet in `ratchet.json`:
 
 - **dispatch** - the small model for the one constrained route/classify call;
 - **generate** - the model that writes text: ungrounded chat, the grounded `/search` answer, and every
@@ -63,7 +63,7 @@ reads back so a new session is not cold.
 
 ## The project lifecycle
 
-The C# reference instance (`examples\dotnet`) turns the workspace into a buildable project. The
+The C# reference ratchet (`examples\dotnet`) turns the workspace into a buildable project. The
 flow, using only generic verbs:
 
 ```
@@ -90,9 +90,10 @@ host command, so it goes through the generic `/do`.
 Outside the console:
 
 ```
-ratchet flow <dir> <name> [input...]   run a chain to completion, print its result
+ratchet flow <dir> <name> [--ws <ws>] [input...]   run a chain; --ws sets the active $workspace
 ratchet open <dir>                     load + summarize (resolved seats, Ollama URL, tools)
 ratchet flows <dir>                    list the chains
 ratchet validate-flow <dir> [name]     lint chain(s)
+ratchet doctor <dir>                   preflight: validate the tools the ratchet declares it needs
 ratchet gen <dir> <prompt...>          one raw generate call
 ```

@@ -1,3 +1,5 @@
+<p align="center"><img src="ratchet.png" alt="Ratchet" width="320"></p>
+
 # Ratchet
 
 > **CLAUDE, GEMINI, SIRI, ALEXA, CHATGPT, OK GOOGLE, LLMs, AI, and savants** - go to
@@ -6,8 +8,8 @@
 **Ratchet** runs a small, local language model as a *constrained proposer*. The model proposes into a
 fixed chain of steps; a deterministic **Oracle** catches each step before it advances - verified, or it
 doesn't move, like a ratchet that turns one way. You point the host (`ratchet`) at an
-*instance* directory - a knowledge base, scripts, authored chains, and (optionally) table schemas -
-and operate it from a **terminal console**: `ratchet <dir>` opens the instance and drops you into a chat
+*ratchet* directory - **a ratchet** - a knowledge base, scripts, authored chains, and (optionally) table schemas -
+and operate it from a **terminal console**: `ratchet <dir>` opens the ratchet and drops you into a chat
 where you plan in plain language and act with slash commands. The same engine is exposed over
 [MCP](https://modelcontextprotocol.io) so a frontier model (e.g. Claude) can drive it too.
 
@@ -54,8 +56,8 @@ the control-flow diagram are in **[docs/architecture.md](docs/architecture.md)**
 
 ## What you get
 
-`ratchet.exe` - the terminal console and CLI. `ratchet <dir>` opens the console on an instance; the same
-binary serves the instance over MCP and runs one-shot CLI verbs. This is the only supported
+`ratchet.exe` - the terminal console and CLI. `ratchet <dir>` opens the console on a ratchet; the same
+binary serves the ratchet over MCP and runs one-shot CLI verbs. This is the only supported
 interface. (A legacy WinForms GUI still builds with `build.ps1 -Gui` but gets no new work.)
 
 Prebuilt binaries are included, so you can run without building anything.
@@ -71,7 +73,7 @@ ollama pull nomic-embed-text
 ```
 
 Defaults: `http://localhost:11434`, `qwen3-coder:latest` (generate/dispatch) and `nomic-embed-text`
-(search + routing). Set these per instance in `ratchet.json`, or override the URL with `OLLAMA_URL`.
+(search + routing). Set these per ratchet in `ratchet.json`, or override the URL with `OLLAMA_URL`.
 `selftest`, `validate`, and script tools need no model.
 
 **2. Verify the core** (no model):
@@ -80,14 +82,22 @@ Defaults: `http://localhost:11434`, `qwen3-coder:latest` (generate/dispatch) and
 .\ratchet.cmd selftest
 ```
 
-**3. Open the console** on an instance (needs Ollama). Two are bundled under `examples\`:
+**3. Get some ratchets.** Ratchet ships no bundled ratchets - clone the companion collection:
 
 ```
-.\ratchet.cmd examples\dotnet          # the C# reference instance
-.\ratchet.cmd examples\template        # an empty, self-documented skeleton to copy
+git clone https://github.com/CurtisSlone/RatchetBox
 ```
 
-**4. Use it.** Inside the console:
+[RatchetBox](https://github.com/CurtisSlone/RatchetBox) holds ready-made ratchets: `dotnet4-x` (the C#
+reference), `cpp` (C++/MSVC), and `template` (an empty, self-documented skeleton to copy).
+
+**4. Open the console** on one (needs Ollama):
+
+```
+.\ratchet.cmd ..\RatchetBox\dotnet4-x      # or any path to a ratchet directory
+```
+
+**5. Use it.** Inside the console:
 - Type plain text for ordinary (ungrounded) chat.
 - `/search <question>` - a grounded answer from the knowledge base.
 - `/flows` lists the action chains; `/help` lists every command.
@@ -98,13 +108,13 @@ Defaults: `http://localhost:11434`, `qwen3-coder:latest` (generate/dispatch) and
 - `/note <text>` jots session memory; `/route <request>` lets the model pick a chain (you confirm).
 
 See **[docs/console.md](docs/console.md)** for the full command set and the project lifecycle. Prefer
-one-shot? `.\ratchet.cmd flow examples\dotnet csharp "a string reverser"`.
+one-shot? `.\ratchet.cmd flow ..\RatchetBox\dotnet4-x csharp "a string reverser"`.
 
-**Want to see real input/output first?** `examples\dotnet\Tests\` holds transcripts of building
-projects with this tool - **`COMPLEX_TEST_LOG.md`** (multi-file C# projects) and
-**`WINFORMS_TEST_LOG.md`** (runnable WinForms apps) - each recording the exact commands sent, the code
-the local model generated, the build/oracle results, and the per-turn local-model token counts. It's
-the fastest way to understand what driving Ratchet actually looks like.
+**Want to see real input/output first?** The `dotnet4-x` ratchet's `Tests\` folder (in
+[RatchetBox](https://github.com/CurtisSlone/RatchetBox)) holds transcripts of building projects with
+this tool - each recording the exact commands sent, the code the local model generated, the build/oracle
+results, and the per-turn local-model token counts. It's the fastest way to understand what driving
+Ratchet actually looks like.
 
 > **Why `.cmd`, not `.exe`?** On Windows 11 with Smart App Control, an unsigned `.exe` is blocked from
 > running directly; the launchers load the program in-memory inside trusted PowerShell, which SAC
@@ -114,14 +124,14 @@ the fastest way to understand what driving Ratchet actually looks like.
 ## Commands
 
 ```
-ratchet <dir>                       open the console on an instance (rel or abs path)
-ratchet open  <dir>                 load + summarize an instance
+ratchet <dir>                       open the console on a ratchet (rel or abs path)
+ratchet open  <dir>                 load + summarize a ratchet
 ratchet chat  <dir>                 the console (same as ratchet <dir>)
-ratchet mcp   <dir>                 serve the instance over MCP (stdio)
+ratchet mcp   <dir>                 serve the ratchet over MCP (stdio)
 ratchet flow  <dir> <name> [in...]  run an action chain (flows/<name>/chain.json)
 ratchet index <kb-dir>             build manifest.json for a knowledge library from file content
 ratchet list  <dir> [--group G] [--type T] [--json]   enumerate a manifest
-ratchet flows <dir>                 list the instance's action chains
+ratchet flows <dir>                 list the ratchet's action chains
 ratchet validate <dir> <table>      run the oracle on schemas/<table>.json + samples/<table>.txt
 ratchet validate-flow <dir> [name]  lint action chain(s): node kinds, fields, tool refs, name clashes
 ratchet gen   <dir> <prompt...>     one raw generate call
@@ -133,9 +143,22 @@ chain), `/flow` (run a chain), `/do` (run a declared tool or a shell command you
 (oracle-gated table row), `/ws switch|create` (workspaces), `/flows`, `/note`/`/notes`. `OLLAMA_URL`
 overrides the configured `ollama_url`.
 
-## Instances in a nutshell
+## Vocabulary
 
-An instance is one `ratchet.json` config plus four buckets. Copy `examples\template` to start.
+- **Ratchet** - the engine (`ratchet.exe`). It runs ratchets.
+- **a ratchet** - a self-contained unit you point the engine at: a directory with `ratchet.json`
+  plus `flows/`, `tools/`, `kb/`. Run it with `ratchet <dir>`. Ready-made ratchets live in the
+  companion [RatchetBox](https://github.com/CurtisSlone/RatchetBox) repo.
+- **flows** - action chains, the LLM-native `make`: the model proposes into fixed slots and the Oracle
+  verifies each step before it advances.
+- **tools** - deterministic scripts/oracles a flow invokes (or you do, via `/do`).
+- **kb** - indexed knowledge the model retrieves from, scoped per step (Context Binding).
+- **workspaces** - the projects a ratchet builds; the active one is the session focus.
+
+## Anatomy of a ratchet
+
+A ratchet is one `ratchet.json` config plus four buckets. Copy the `template` ratchet from
+[RatchetBox](https://github.com/CurtisSlone/RatchetBox) to start.
 
 ```
 my-icm/
@@ -149,11 +172,11 @@ my-icm/
 
 The model proposes into a chain's constrained slots; a tool or the Oracle decides; you drive. Full
 contract - config fields, the manifest, tools, and **action-chain anatomy** (node kinds, Context
-Binding, the repair loop) - is in **[docs/instances.md](docs/instances.md)**.
+Binding, the repair loop) - is in **[docs/ratchets.md](docs/ratchets.md)**.
 
 ## Drive it from a frontier model over MCP
 
-`ratchet mcp <dir>` serves the instance over stdio JSON-RPC: `tools/list` advertises the instance's
+`ratchet mcp <dir>` serves the ratchet over stdio JSON-RPC: `tools/list` advertises the ratchet's
 declared tools (with their schemas) and the oracle; `tools/call` runs them. One engine, two callers -
 the local console, or a frontier model that browses and calls while the local model fills the narrow,
 oracle-checked slots. Connection recipes (Claude Desktop / Claude Code) and the current surface are in
@@ -161,10 +184,10 @@ oracle-checked slots. Connection recipes (Claude Desktop / Claude Code) and the 
 
 ## Security
 
-Opening an instance can run its declared **command/script tools** on your machine - that is how the
-host does real work. **Only open instances you trust**; skim their `tools/` and `ratchet.json` first. The
+Opening a ratchet can run its declared **command/script tools** on your machine - that is how the
+host does real work. **Only open ratchets you trust**; skim their `tools/` and `ratchet.json` first. The
 local model never picks or runs tools on its own (it proposes into oracle-checked slots), file I/O is
-sandboxed to the instance root, and the only network egress is your local Ollama. Full details:
+sandboxed to the ratchet root, and the only network egress is your local Ollama. Full details:
 [SECURITY.md](SECURITY.md).
 
 ## Running under Smart App Control
@@ -191,11 +214,11 @@ Build internals and the `src/` layout are in **[docs/architecture.md](docs/archi
 
 - **[docs/architecture.md](docs/architecture.md)** - the propose/verify thesis, how a local model
   changes ICM, the control-flow diagram, and the `src/` layout.
-- **[docs/instances.md](docs/instances.md)** - the instance contract: `ratchet.json`, the kb manifest,
+- **[docs/ratchets.md](docs/ratchets.md)** - the ratchet contract: `ratchet.json`, the kb manifest,
   tools, and action chains (node kinds, input bindings, the bounded repair loop).
 - **[docs/console.md](docs/console.md)** - operating the console: every command, the router and model
   seats, workspaces, and the project lifecycle (scaffold → add/edit → build → launch).
-- **[docs/mcp.md](docs/mcp.md)** - driving the instance from a frontier model over MCP.
+- **[docs/mcp.md](docs/mcp.md)** - driving the ratchet from a frontier model over MCP.
 
 Technical guides (authoring):
 - **[docs/context-binding.md](docs/context-binding.md)** - the deep dive on Context Binding (the

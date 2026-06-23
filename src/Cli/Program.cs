@@ -155,7 +155,7 @@ namespace Icm
             Console.WriteLine(outText);
         }
 
-        private static void CmdFlow(string dir, string name, string input)
+        private static void CmdFlow(string dir, string name, string input, string ws)
         {
             Instance icm = Instance.Open(dir);
             var status = (Action<string>)delegate(string s) { Console.Error.WriteLine("  - " + s); };
@@ -163,7 +163,15 @@ namespace Icm
             string chainDir = System.IO.Path.Combine(icm.FlowsDirAbs(), name);
             if (!Chain.IsChainDir(chainDir)) throw new IcmError("no flow '" + name + "' (expected flows/" + name + "/chain.json)");
             Chain c = Chain.Load(chainDir);
-            ChainResult cr = new ChainEngine(icm, disp, status).Run(c, input, null);
+            // --ws <name> sets the active workspace (the abs path under workspaces/), matching what the
+            // console's /ws switch does, so workspace-bound chains ($workspace) run non-interactively.
+            string workspace = null;
+            if (!string.IsNullOrEmpty(ws))
+            {
+                workspace = System.IO.Path.Combine(icm.WorkspacesDirAbs(), ws);
+                if (!System.IO.Directory.Exists(workspace)) throw new IcmError("no workspace '" + ws + "' (under workspaces/)");
+            }
+            ChainResult cr = new ChainEngine(icm, disp, status).Run(c, input, workspace);
             if (!string.IsNullOrEmpty(cr.Text)) Console.WriteLine(cr.Text);
             if (cr.IsError) Environment.Exit(2);
         }
@@ -176,7 +184,7 @@ namespace Icm
             switch (s)
             {
                 case "open": case "chat": case "mcp": case "flow": case "validate":
-                case "reindex": case "index": case "list": case "flows": case "validate-flow": case "gen": case "selftest":
+                case "reindex": case "index": case "list": case "flows": case "validate-flow": case "doctor": case "gen": case "selftest":
                 case "help": case "-h": case "--help": return true;
                 default: return false;
             }
@@ -218,6 +226,15 @@ namespace Icm
                     CmdValidateFlow(dir, Arg(args, 2));   // name optional: omit to lint every flow
                     break;
                 }
+                case "doctor":
+                {
+                    string dir = Arg(args, 1);
+                    if (dir == null) throw new IcmError("usage: ratchet doctor <dir>");
+                    Instance icm = Instance.Open(dir);
+                    int code = Doctor.Run(icm, EffectiveUrl(icm));
+                    if (code != 0) Environment.Exit(code);
+                    break;
+                }
                 case "gen":
                 {
                     string dir = Arg(args, 1);
@@ -246,9 +263,17 @@ namespace Icm
                 case "flow":
                 {
                     string dir = Arg(args, 1), name = Arg(args, 2);
-                    if (dir == null || name == null) throw new IcmError("usage: icm flow <dir> <name> [input...]");
-                    string input = (args.Length > 3) ? string.Join(" ", args, 3, args.Length - 3) : "";
-                    CmdFlow(dir, name, input);
+                    if (dir == null || name == null) throw new IcmError("usage: icm flow <dir> <name> [--ws <workspace>] [input...]");
+                    // Pull an optional "--ws <workspace>" out of the trailing args; the rest is the input.
+                    string ws = null;
+                    var rest = new System.Collections.Generic.List<string>();
+                    for (int i = 3; i < args.Length; i++)
+                    {
+                        if (args[i] == "--ws" && i + 1 < args.Length) { ws = args[i + 1]; i++; }
+                        else rest.Add(args[i]);
+                    }
+                    string input = string.Join(" ", rest.ToArray());
+                    CmdFlow(dir, name, input, ws);
                     break;
                 }
                 case "reindex":
@@ -328,6 +353,7 @@ namespace Icm
             "  icm flow  <dir> <name> [in...]  run an action chain (flows/<name>/chain.json)\n" +
             "  icm validate <dir> <table>      run the oracle on a table\n" +
             "  icm validate-flow <dir> [name]  lint action chain(s): bad node kinds, missing fields, unknown tools\n" +
+            "  icm doctor <dir>                preflight: validate the tools the ratchet declares it needs\n" +
             "  icm reindex <dir>               regenerate manifest.json from files' <!--icm--> blocks\n" +
             "  icm index <kb-dir>              build manifest.json for a knowledge library from file content\n" +
             "  icm list  <dir> [--group G] [--type T] [--json]   enumerate the KB catalog\n" +

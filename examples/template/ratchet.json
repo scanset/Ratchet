@@ -1,9 +1,0 @@
-{
-  "$comment": "Reusable instance skeleton (the new launch model). Copy this dir, set name/domain/models, drop reference content into kb/ (then `ratchet index kb`), and author action chains under flows/. Launch with `ratchet <this-dir>` or `ratchet <path-to-ratchet.json>`. workdir defaults to this folder; flows/tools/kb/schemas/samples default under it - add a dir field only to point elsewhere (e.g. a shared base).",
-  "name": "CHANGE_ME",
-  "domain": "CHANGE_ME - one line: what this ICM is for",
-  "models": { "generate": "qwen3-coder:latest", "dispatch": "qwen3-coder:latest", "embed": "nomic-embed-text" },
-  "ollama_url": "http://localhost:11434",
-  "router": { "autorun": "confirm" },
-  "knowledgeBases": [ { "name": "kb", "path": "kb", "default": true } ]
-}

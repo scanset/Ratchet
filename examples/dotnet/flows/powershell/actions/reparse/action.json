@@ -1,9 +1,0 @@
-{
-  "id": "powershell.reparse",
-  "kind": "action",
-  "tool": "ps_parse",
-  "inputs": [ { "from": "powershell.fix", "path": ".", "as": "code" } ],
-  "body": { "code": "{{ code }}" },
-  "on_success": "powershell.done",
-  "on_failure": "powershell.fail"
-}

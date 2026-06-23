@@ -1,9 +1,0 @@
-{
-  "id": "powershell.parse",
-  "kind": "action",
-  "tool": "ps_parse",
-  "inputs": [ { "from": "powershell.generate", "path": ".", "as": "code" } ],
-  "body": { "code": "{{ code }}" },
-  "on_success": "powershell.done",
-  "on_failure": "powershell.fix"
-}

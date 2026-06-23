@@ -64,9 +64,9 @@ the tool's **exit code** routes the edge (`0` -> `on_success`, non-zero -> `on_f
   "on_success": "edit_file.log", "on_failure": "edit_file.fix" }
 ```
 
-### `generate` - free text via the generate seat
-The ICM proposer. Renders `prompt.md` from its bound slots; its output becomes this node's value (which
-a later node binds via `from`).
+### `generate` - text (or structured JSON) via the generate seat
+The proposer. Renders `prompt.md` from its bound slots; its output becomes this node's value (which a
+later node binds via `from`).
 
 ```jsonc
 { "id": "edit_file.generate", "kind": "generate", "prompt": "./prompt.md",
@@ -75,6 +75,24 @@ a later node binds via `from`).
               { "from": "edit_file.read", "path": ".", "as": "current", "max_chars": 8000 },
               { "search": "kb", "query": "{{ request }}", "k": 2, "as": "refs", "max_chars": 3000 } ],
   "on_success": "edit_file.build", "on_failure": "edit_file.fail" }
+```
+
+By default the output is free text. Add an **`output_schema`** (a JSON Schema object) and the node
+returns structured JSON validated against it; downstream bindings then pull individual fields with
+`path` (a JSON pointer - see [context-binding.md](context-binding.md)). This is how a "plan" node
+decides what to retrieve: it emits one query field per knowledge base, and the next node routes each
+into its own `search`. An empty field renders an empty query, which the engine skips - so only the
+sources the model chose are consulted, with no wasted context.
+
+```jsonc
+{ "id": "cpp.plan", "kind": "generate", "prompt": "./prompt.md",
+  "inputs": [ { "from": "$input", "path": ".", "as": "task" } ],
+  "output_schema": { "type": "object",
+    "properties": { "cppref_q": { "type": "string" }, "win32_q": { "type": "string" } },
+    "required": ["cppref_q", "win32_q"] },
+  "on_success": "cpp.generate", "on_failure": "cpp.generate" }
+// then in cpp.generate:  { "from": "cpp.plan", "path": "cppref_q", "as": "cppref_q" }
+//                        { "search": "cppref", "query": "{{ cppref_q }}", "k": 3, "as": "refs" }
 ```
 
 ### `ai_branch` - a model-chosen edge (closed enum)
@@ -134,7 +152,7 @@ which repairs twice; `examples/dotnet/flows/csharp` repairs once). Keep budgets 
 ## Run, lint, inspect
 
 ```
-.\ratchet.cmd flow <dir> <name> [input...]   # run a chain to completion (non-interactive)
+.\ratchet.cmd flow <dir> <name> [--ws <workspace>] [input...]   # run a chain (non-interactive; --ws sets $workspace)
 .\ratchet.cmd validate-flow <dir> [name]     # lint all chains, or one by name
 .\ratchet.cmd flows <dir>                     # list a dir's chains (the /route catalog)
 ```
@@ -155,5 +173,5 @@ node (id, kind, ok, output - including the oracle's diagnostics on a failed buil
 - **Unroll repair, don't loop** - the engine has no cycle primitive by design (lintability +
   termination). Add explicit `fix2`/`recheck2` to go deeper.
 - **C# 5 in prompts** - if a `generate` node emits C#, its prompt must forbid `$"..."` and the other
-  C# 6+ constructs, or the compile oracle will reject and burn a repair (see the dotnet instance's
+  C# 6+ constructs, or the compile oracle will reject and burn a repair (see the dotnet ratchet's
   prompts).

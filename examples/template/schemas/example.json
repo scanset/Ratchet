@@ -1,9 +1,0 @@
-{
-  "name": "example",
-  "key": "id",
-  "columns": [
-    { "name": "id",    "type": "int",    "required": true },
-    { "name": "label", "type": "string", "required": true },
-    { "name": "size",  "type": "int",    "min": 1, "max": 100 }
-  ]
-}

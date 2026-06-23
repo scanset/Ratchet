@@ -1,9 +1,0 @@
-{
-  "$comment": "EXAMPLE action chain (copy this shape for real chains). Generate an artifact for the task ($input), grounded in the kb (search), check it with the example_check oracle, and repair ONCE if it fails: generate -> check -> done | fix -> recheck -> done | fail. The repair is bounded (one retry) and unrolled (no cycle) so it lints clean and always terminates. To repair twice, add fix2/recheck2 and point recheck.on_failure at fix2 (see examples/dotnet flows/add_file).",
-  "id": "draft",
-  "version": "1.0.0",
-  "summary": "Example: generate an artifact grounded in the knowledge base, verify it with the oracle, and repair once if the check fails.",
-  "entry": "draft.generate",
-  "budgets": { "max_steps": 10, "max_total_tokens": 12000, "max_wallclock_seconds": 600 },
-  "nodes": ["draft.generate", "draft.check", "draft.fix", "draft.recheck", "draft.done", "draft.fail"]
-}

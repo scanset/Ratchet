@@ -1,9 +1,0 @@
-{
-  "$comment": "powershell: generate a PowerShell script for a task, parse-check it (ps_parse, the oracle), repair once if it does not parse. Same shape as the csharp chain, swapping the oracle tool.",
-  "id": "powershell",
-  "version": "1.0.0",
-  "summary": "Generate a PowerShell 5.1 script for a task, parse-check it, and repair once if it does not parse.",
-  "entry": "powershell.generate",
-  "budgets": { "max_steps": 10, "max_total_tokens": 12000, "max_wallclock_seconds": 600 },
-  "nodes": ["powershell.generate", "powershell.parse", "powershell.fix", "powershell.reparse", "powershell.done", "powershell.fail"]
-}

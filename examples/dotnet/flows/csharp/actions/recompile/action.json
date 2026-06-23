@@ -1,9 +1,0 @@
-{
-  "id": "csharp.recompile",
-  "kind": "action",
-  "tool": "csc_check",
-  "inputs": [ { "from": "csharp.fix", "path": ".", "as": "code" } ],
-  "body": { "code": "{{ code }}" },
-  "on_success": "csharp.done",
-  "on_failure": "csharp.fail"
-}

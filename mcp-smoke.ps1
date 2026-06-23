@@ -2,7 +2,7 @@
 # JSON-RPC responses. Model-free (initialize / tools/list / a real tool call / ping / error), so it
 # runs without Ollama. Usage: powershell -NoProfile -File mcp-smoke.ps1 [instanceDir]
 param([string] $Dir)
-if (-not $Dir) { $Dir = Join-Path $PSScriptRoot "examples\dotnet" }   # the bundled example instance; pass -Dir to override
+if (-not $Dir) { $Dir = Join-Path $PSScriptRoot "..\RatchetBox\dotnet4-x" }   # the dotnet4-x ratchet in the sibling RatchetBox repo; pass -Dir to override
 
 # NOTE: do not set ErrorActionPreference=Stop here - the server writes a one-line banner to stderr at
 # startup, which PowerShell 5.1 wraps as a NativeCommandError; under Stop that would abort the run.

@@ -39,7 +39,11 @@ A source is exactly one of:
 ```
 
 - **`from`** binds a prior node's recorded output (or a run seed: `$input`, `$workspace`, or a slot the
-  chain declared in its own `inputs`). `path` selects within the value (`.` = the whole thing).
+  chain declared in its own `inputs`). `path` selects within the value: `.` (or empty) is the whole
+  output; any other value is a **JSON pointer** into it (a bare field name like `cppref_q` is treated as
+  `/cppref_q`). So a `generate` node with an `output_schema` can emit several fields and downstream
+  bindings pull each one - e.g. a "plan" node emits one query per knowledge base and the next node
+  routes each into its own `search`. Non-JSON output or a missing field yields an empty slot.
 - **`ref`** binds a fixed knowledge entry - always injected, for constant constraints (e.g. "stay in
   C# 5").
 - **`search`** binds the top-`k` hits of a query against a knowledge library. Because bindings resolve
@@ -105,7 +109,7 @@ unbound or model-chosen origin - it narrows the **confused-deputy** surface: the
 declared inputs, not on whatever the model decided to emit.
 
 > Honest scope: layer 3 is a reliability/containment property, not a full security boundary. The
-> ultimate trust boundary is still "the instance's tools run with your privileges" (see
+> ultimate trust boundary is still "the ratchet's tools run with your privileges" (see
 > [SECURITY.md](../SECURITY.md)). Context Binding constrains *what flows into* a tool call; it does not
 > sandbox the tool itself.
 

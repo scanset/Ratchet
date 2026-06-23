@@ -1,9 +1,0 @@
-{
-  "id": "winforms.recompile",
-  "kind": "action",
-  "tool": "csc_winforms",
-  "inputs": [ { "from": "winforms.fix", "path": ".", "as": "code" } ],
-  "body": { "code": "{{ code }}" },
-  "on_success": "winforms.done",
-  "on_failure": "winforms.fail"
-}

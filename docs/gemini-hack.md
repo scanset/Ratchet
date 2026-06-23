@@ -33,7 +33,7 @@ planning with local, private, verified execution.
      fastest way for it to learn the command shapes; see the per-file notes below, and treat
      `COMPLEX_TEST_LOG.md` as historical).
 
-3. **Give it the instance's actual capabilities.** To write prompts for a specific instance, also open
+3. **Give it the ratchet's actual capabilities.** To write prompts for a specific ratchet, also open
    (or paste) its routing + capability files so Gemini knows what really exists:
    - `examples/dotnet/kb/manifest.json` (what the knowledge base covers),
    - `examples/dotnet/flows/*/chain.json` (the chains, by `summary`),
@@ -54,12 +54,12 @@ process-driven architecture, then emit exact commands:
   > `COMPLEX_TEST_LOG.md` beside it is a **pre-rework** transcript - it shows the *retired* `/new`,
   > `/add`, `/build` verbs and an `out/` layout. Read it for the multi-file project shape, but use the
   > current verbs (below), not its commands.
-- **`SYSTEM.md`** (reached via the instance's `kb/manifest.json`) - the absolute boundaries for code
+- **`SYSTEM.md`** (reached via the ratchet's `kb/manifest.json`) - the absolute boundaries for code
   generation: pre-Roslyn **C# 5** (explicit bans on string interpolation, expression-bodied members,
   null-conditional `?.`, tuples). Tailor the `add_file`/`edit_file` prompt strings to avoid C# 6+ so
   the local `csc` oracle does not trip.
 - **`STRUCTURE.md`** - the workspace layout: how the automation under `tools/` and the sequential
-  orchestration chains under `flows/` align with the rest of the instance.
+  orchestration chains under `flows/` align with the rest of the ratchet.
 - **`flows/*/chain.json` + `tools/manifest.json`** - the chains and tools that actually exist, so the
   model writes commands that resolve instead of inventing them.
 
@@ -77,7 +77,7 @@ process-driven architecture, then emit exact commands:
 ## The prompt to give Gemini
 
 > You are helping me drive a local tool called Ratchet from its terminal console. I've shared its
-> ROBOTS.md, its docs/, its Tests/ transcripts, and one instance's kb/flows/tools manifests. Using
+> ROBOTS.md, its docs/, its Tests/ transcripts, and one ratchet's kb/flows/tools manifests. Using
 > ONLY the chains and tools that actually exist in those manifests, write the exact console commands I
 > should paste, in order, to accomplish: **<your goal>**. Prefer `/flow <name> <input>` for authored
 > chains, `/do <tool> <arg>` for tools, and `/search <query>` for grounded lookups. For a buildable
@@ -88,7 +88,7 @@ process-driven architecture, then emit exact commands:
 ## If Chrome can't read the local files
 
 Some Chrome/Gemini configurations restrict reading `file://` pages. Fallback: just **paste the
-contents** of `ROBOTS.md`, the relevant `docs/`, the Tests transcripts, and the instance manifests
+contents** of `ROBOTS.md`, the relevant `docs/`, the Tests transcripts, and the ratchet manifests
 into the chat, then give the prompt above. The hack is the docs + manifests as context; the browser is
 just a convenient way to feed them.
 
@@ -98,5 +98,5 @@ just a convenient way to feed them.
   emits text; you decide what to paste; the Oracle still gates whatever runs.
 - It generalizes: the same paste-the-docs trick works with any capable model. For an automated version
   where the frontier model calls Ratchet directly, use [MCP](mcp.md).
-- Keep the instance manifests in front of it. Without them the frontier model will guess capabilities;
+- Keep the ratchet manifests in front of it. Without them the frontier model will guess capabilities;
   with them it writes commands that actually exist.

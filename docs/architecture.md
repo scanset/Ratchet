@@ -3,7 +3,7 @@
 How Ratchet turns an unreliable local model into a reliable operator. The two pieces that do the work
 are the **Oracle** (deterministic verification) and **Context Binding** (scoped context per step);
 the [Lineage](#lineage) section credits what's borrowed vs new. For the user-facing commands see
-[console.md](console.md); for authoring instances see [instances.md](instances.md).
+[console.md](console.md); for authoring ratchets see [ratchets.md](ratchets.md).
 
 ## The core thesis
 
@@ -43,7 +43,7 @@ Two guardrails keep this honest:
   (`/route`), and even then a deterministic gate keeps only a confident, on-list match and you confirm
   before it runs.
 - **Tools are declared; the model only fills arguments.** A tool's command is authored in the
-  instance, never invented by the model. *Which* tool runs is decided by an authored chain or by a
+  ratchet, never invented by the model. *Which* tool runs is decided by an authored chain or by a
   capable orchestrator over MCP - never by an open local-model loop.
 
 ## Context binding
@@ -85,7 +85,7 @@ model and into deterministic code**, and adds the machine check the frontier set
 | Checking output | a human reviews each stage's file | a deterministic **oracle** gates output, with bounded repair (the human still edits) |
 | Model output shape | trusted to format itself | **grammar/enum-constrained**, so only a valid shape can be emitted |
 | Tools | the agent calls scripts / MCP as it sees fit | tools are **declared**; the model only fills arguments |
-| Orchestrator seat | the capable agent, always | you drive from chat by default; the **same instance is exposed over MCP**, so a frontier model can take the seat |
+| Orchestrator seat | the capable agent, always | you drive from chat by default; the **same ratchet is exposed over MCP**, so a frontier model can take the seat |
 
 The key move is the **injection**. Rather than letting the model wander the filesystem (safe for a
 frontier model, not a local one), the host does the layered context loading itself and injects
@@ -144,7 +144,7 @@ inside a static, oracle-gated control graph - is the system.
 One flat `namespace Icm`; folders are organizational.
 
 ```
-Conventions.cs   the instance contract in one place: file/dir names + intent/tool/action-kind constants
+Conventions.cs   the ratchet contract in one place: file/dir names + intent/tool/action-kind constants
 Json.cs          JSON parse/serialize + navigation + small object/schema builders
 Model/           pure data: Config, Manifest, TableSchema, Chain, FlowInfo, Results
 Runtime/         the engine: Instance (sandboxed IO), Oracle, Tsv, ToolRunner, Ollama, Dispatcher,
@@ -156,7 +156,7 @@ Gui/             the legacy WinForms executable (built only with -Gui)
 
 The host is a **domain-agnostic harness**: it contains the chain engine, the dispatcher, the oracle
 *mechanism* (the TSV validator), search/embedder mechanics, and the generic verbs. It hardcodes no
-specific flow, tool, or knowledge - all of that lives in instances.
+specific flow, tool, or knowledge - all of that lives in ratchets.
 
 ## Build
 

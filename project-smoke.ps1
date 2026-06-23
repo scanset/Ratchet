@@ -3,7 +3,7 @@
 # and asserts the outputs, catching tool regressions (e.g. the $Proj/[string] coercion bug and the
 # relative-vs-absolute path bug we hit). Mirrors mcp-smoke.ps1. Exit 0 = all pass.
 $ErrorActionPreference = "Stop"
-$inst = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "examples\dotnet"   # the bundled example instance
+$inst = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "..\RatchetBox\dotnet4-x"   # the dotnet4-x ratchet in the sibling RatchetBox repo
 $name = "__smoke__"
 $pass = 0; $fail = 0
 function Check($label, [bool]$ok, $detail) {

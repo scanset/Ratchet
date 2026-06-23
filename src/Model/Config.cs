@@ -116,6 +116,9 @@ namespace Icm
         public string SamplesDir = null;
         public string WorkspacesDir = null; // projects container; may point anywhere (a write location)
         public List<KnowledgeBase> KnowledgeBases = new List<KnowledgeBase>();
+        // Opaque preflight checks the host's `doctor` validates (generic mechanism; the instance declares
+        // which tools it needs). Each entry: name + one of exe/file/env/http/model/kb/tool + required?/hint.
+        public object Requirements = null;
 
         public static Config Load(string path)
         {
@@ -150,6 +153,8 @@ namespace Icm
             c.KnowledgeBases = KnowledgeBase.LoadList(Json.GetArr(root, "knowledgeBases"));
             object oracle;
             if (root.TryGetValue("oracle", out oracle)) c.Oracle = oracle;
+            object reqs;
+            if (root.TryGetValue("requirements", out reqs)) c.Requirements = reqs;
             return c;
         }
 

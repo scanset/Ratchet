@@ -1,9 +1,0 @@
-{
-  "$comment": "csharp: generate C# 5 for a task, compile it (csc_check, the oracle), and repair ONCE if it fails. generate -> compile -> done | fix -> recompile -> done | fail. The repair is bounded (one retry), unrolled (no cycle) so it lints clean and terminates.",
-  "id": "csharp",
-  "version": "1.0.0",
-  "summary": "Generate C# 5 code for a focused task, compile it with the in-box csc, and repair once if it does not build.",
-  "entry": "csharp.generate",
-  "budgets": { "max_steps": 10, "max_total_tokens": 12000, "max_wallclock_seconds": 600 },
-  "nodes": ["csharp.generate", "csharp.compile", "csharp.fix", "csharp.recompile", "csharp.done", "csharp.fail"]
-}
