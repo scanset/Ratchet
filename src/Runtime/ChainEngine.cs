@@ -26,33 +26,40 @@ namespace Icm
     {
         private const int HardStepCap = 100;       // backstop when a chain declares no max_steps
         private const int DecideTimeoutMs = 60000;
+        private const int MaxDepth = 8;             // foreach nesting cap: a sub-chain that foreach-es back into one would recurse without bound
 
         private static readonly Regex SlotRe = new Regex(@"\{\{\s*([A-Za-z0-9_\-]+)\s*\}\}", RegexOptions.Compiled);
 
         private readonly Instance icm;
         private readonly Dispatcher disp;
         private readonly Action<string> status;
+        private readonly int depth;                 // nesting level (0 = top-level run; foreach sub-runs get depth+1)
 
-        public ChainEngine(Instance icm, Dispatcher disp, Action<string> status)
+        public ChainEngine(Instance icm, Dispatcher disp, Action<string> status) : this(icm, disp, status, 0) { }
+
+        public ChainEngine(Instance icm, Dispatcher disp, Action<string> status, int depth)
         {
             this.icm = icm;
             this.disp = disp;
             this.status = status != null ? status : delegate(string s) { };
+            this.depth = depth;
         }
 
         public ChainResult Run(Chain c, string input, string workspace)
         {
             var res = new ChainResult();
+            if (depth > MaxDepth) { res.IsError = true; res.Outcome = "aborted: max recursion depth (" + MaxDepth + ")"; return res; }
             var state = new Dictionary<string, string>();   // node id -> output text
             state["$input"] = input != null ? input : "";
             state["$workspace"] = workspace != null ? workspace : "";   // the active workspace (proj for project chains)
             SplitInputs(c.Inputs, state["$input"], state);              // chain-declared named slots (head/tail)
 
             string runId = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
-            WriteState(runId, "meta.json", Json.Obj("chain", c.Id, "input", state["$input"], "started", DateTime.Now.ToString("s")));
+            WriteState(runId, "meta.json", Json.Obj("chain", c.Id, "workspace", state["$workspace"], "input", state["$input"], "started", DateTime.Now.ToString("s")));
 
             int maxSteps = c.MaxSteps > 0 ? c.MaxSteps : HardStepCap;
             long tok0 = TokenMeter.Total;
+            DateTime startT = DateTime.Now;
             string lastOutput = "";
             string step = c.Entry;
             int n = 0;
@@ -61,6 +68,7 @@ namespace Icm
             {
                 if (n >= maxSteps) { res.IsError = true; res.Outcome = "aborted: max_steps (" + maxSteps + ")"; break; }
                 if (c.MaxTokens > 0 && (TokenMeter.Total - tok0) > c.MaxTokens) { res.IsError = true; res.Outcome = "aborted: max_tokens"; break; }
+                if (c.MaxWallclock > 0 && (DateTime.Now - startT).TotalSeconds > c.MaxWallclock) { res.IsError = true; res.Outcome = "aborted: max_wallclock"; break; }
 
                 ActionNode a;
                 if (!c.Actions.TryGetValue(step, out a)) { res.IsError = true; res.Outcome = "aborted: missing node '" + step + "'"; break; }
@@ -76,10 +84,10 @@ namespace Icm
                 else if (a.Kind == Conventions.ActionKind.Generate)
                 {
                     Dictionary<string, string> slots = ResolveSlots(a, state);
-                    string outp;
+                    string outp; string gp = "";
                     try
                     {
-                        string gp = Render(ReadPrompt(a), slots);
+                        gp = Render(ReadPrompt(a), slots);
                         if (a.OutputSchema != null)
                         {
                             // Structured generate: force the declared schema and store the raw JSON so
@@ -91,7 +99,9 @@ namespace Icm
                     }
                     catch (IcmError e) { res.IsError = true; res.Outcome = "aborted: " + e.Message; break; }
                     state[a.Id] = outp; lastOutput = outp;
-                    WriteState(runId, "step-" + n.ToString("000") + ".json", Json.Obj("node", a.Id, "kind", a.Kind, "output", Cap(outp, 4000)));
+                    // Record the rendered PROMPT alongside the OUTPUT so a run reads back as a full transcript
+                    // (prompt -> response per model call) for review.
+                    WriteState(runId, "step-" + n.ToString("000") + ".json", Json.Obj("node", a.Id, "kind", a.Kind, "prompt", Cap(gp, 16000), "output", Cap(outp, 16000)));
                     step = a.OnSuccess;
                 }
                 else if (a.Kind == Conventions.ActionKind.AiBranch)
@@ -140,11 +150,16 @@ namespace Icm
                         foreach (string rawItem in rawItems)
                         {
                             string item = rawItem.Trim(); if (item.Length == 0) continue;
+                            // Enforce the parent chain's budgets BETWEEN sub-runs: the whole fan-out is ONE parent
+                            // step, so the main-loop checks above never fire mid-foreach. Stop and fail (not a silent
+                            // partial pass) the moment a budget is hit.
+                            if (c.MaxTokens > 0 && (TokenMeter.Total - tok0) > c.MaxTokens) { outSb.Append("aborted: max_tokens (foreach)\n"); failCount++; break; }
+                            if (c.MaxWallclock > 0 && (DateTime.Now - startT).TotalSeconds > c.MaxWallclock) { outSb.Append("aborted: max_wallclock (foreach)\n"); failCount++; break; }
                             var iv = new Dictionary<string, string>(); iv["item"] = item;
                             string subInput = Render(a.ItemInput != null ? a.ItemInput : "{{ item }}", iv);
                             status("foreach " + a.Id + ": " + item);
                             ChainResult r;
-                            try { r = new ChainEngine(icm, disp, status).Run(sub, subInput, ws); }
+                            try { r = new ChainEngine(icm, disp, status, depth + 1).Run(sub, subInput, ws); }
                             catch (Exception ex) { r = new ChainResult(); r.IsError = true; r.Outcome = ex.Message; }
                             // A sub-chain that reaches its own fail exit returns IsError=false with an "aborted"
                             // outcome - count that as a failure too, else a body that won't build passes silently.

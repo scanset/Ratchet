@@ -5,8 +5,8 @@ A ratchet is data Ratchet loads - the host code never changes per domain. It is 
 with a working example chain) and replace its contents.
 
 This page is the contract overview. For depth, see the technical guides:
-[authoring-flows.md](authoring-flows.md) (action chains), [authoring-tools.md](authoring-tools.md)
-(tools), and [context-binding.md](context-binding.md) (how each step gets its scoped context).
+[authoring-flows.md](author-flows.md) (action chains), [authoring-tools.md](author-tools.md)
+(tools), and [context-binding.md](../concepts/context-binding.md) (how each step gets its scoped context).
 
 ```
 my-ratchet/
@@ -175,9 +175,9 @@ Cap any injected slot with `max_chars`. Templating uses `{{ slot }}` in `prompt.
 Repair is expressed as **unrolled** nodes (no cycles), so a chain always lints clean and terminates:
 `generate → check → done | fix → recheck → done | fail`. The `check` action's `on_failure` points at a
 `fix` generate node (which receives the oracle's errors and the previous attempt); to repair twice,
-add a second `fix2`/`recheck2` pair and point `recheck.on_failure` at `fix2`. See
-`examples\dotnet\flows\csharp` (single-file generate-compile-repair) and `examples\dotnet\flows\edit_file`
-(a workspace-bound project chain that repairs twice).
+add a second `fix2`/`recheck2` pair and point `recheck.on_failure` at `fix2`. For working examples, see a
+reference ratchet's `flows/` (a single-file generate-compile-repair chain, and a workspace-bound project
+chain that repairs twice).
 
 Lint chains with `ratchet validate-flow <dir>` (all) or `ratchet validate-flow <dir> <name>` (one): it checks
 node kinds, required fields, unknown tool references, unreachable nodes, and that chain + tool names
@@ -189,4 +189,4 @@ don't collide.
 active workspace (set with `/ws switch`) is injected into chains as `$workspace` and into chat as the
 session focus. The C# reference ratchet scaffolds a project there with `new_project`, builds it up
 with the `add_file` / `edit_file` chains (whole-project compile oracle + repair), and writes a
-SAC-safe launcher with `make_launcher`. See [console.md](console.md#the-project-lifecycle).
+SAC-safe launcher with `make_launcher`. See [console.md](use-the-console.md#the-project-lifecycle).

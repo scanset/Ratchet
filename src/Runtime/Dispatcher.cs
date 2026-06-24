@@ -1,5 +1,5 @@
 // The dispatcher: the operator console's command layer. Reusable across the console REPL
-// (Cli/ConsoleChat.cs), the WinForms GUI, the MCP server, and the flow engine.
+// (Cli/ConsoleChat.cs), the MCP server, and the flow engine.
 //
 // The command model: plain text is UNGROUNDED chat (the model never picks an action from it).
 // Acting is always an explicit slash command - /search (grounded answer over a knowledge base),
@@ -8,8 +8,7 @@
 // proposes into constrained slots; a deterministic gate/oracle decides; the operator drives.
 //
 // Threading: a Dispatcher is single-threaded per use - one in-flight operation at a time (the
-// `cancel` handle is reassigned per call). Front ends serialize their calls (e.g. the GUI disables
-// send during a turn).
+// `cancel` handle is reassigned per call). Callers serialize their calls.
 
 using System;
 using System.Collections.Generic;
@@ -39,8 +38,8 @@ namespace Icm
         private bool streamedThisTurn;  // set when this turn streamed its output via OnToken
         private string activeWorkspace; // the session focus: a relative path under workspaces/, or null
 
-        // Optional per-front-end token sink. When set (the console sets it), freeform generation
-        // (ask / make / chat) streams tokens here as they arrive. Null = non-streaming (GUI, MCP).
+        // Optional per-caller token sink. When set (the console sets it), freeform generation
+        // (ask / make / chat) streams tokens here as they arrive. Null = non-streaming (MCP).
         public Action<string> OnToken;
 
         public Dispatcher(Instance icm, string url, Action<string> status)

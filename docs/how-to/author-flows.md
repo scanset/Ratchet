@@ -3,8 +3,8 @@
 A flow is an **action chain**: a directory of nodes the engine walks from an entry to an exit, one
 step at a time. It is prompt chaining made filesystem-native and deterministic - the chain is the
 orchestrator, the model proposes inside nodes, and the model never decides what runs next. This is the
-technical how-to; for the context model see [context-binding.md](context-binding.md), for tools see
-[authoring-tools.md](authoring-tools.md).
+technical how-to; for the context model see [context-binding.md](../concepts/context-binding.md), for tools see
+[authoring-tools.md](author-tools.md).
 
 ## Two tiers
 
@@ -79,7 +79,7 @@ later node binds via `from`).
 
 By default the output is free text. Add an **`output_schema`** (a JSON Schema object) and the node
 returns structured JSON validated against it; downstream bindings then pull individual fields with
-`path` (a JSON pointer - see [context-binding.md](context-binding.md)). This is how a "plan" node
+`path` (a JSON pointer - see [context-binding.md](../concepts/context-binding.md)). This is how a "plan" node
 decides what to retrieve: it emits one query field per knowledge base, and the next node routes each
 into its own `search`. An empty field renders an empty query, which the engine skips - so only the
 sources the model chose are consulted, with no wasted context.
@@ -124,6 +124,11 @@ context-accumulating builds.
   "inputs": [ { "from": "compose.worklist", "as": "units" } ],
   "on_success": "compose.build", "on_failure": "compose.fail" }
 ```
+Guards (so it is safe at scale): sub-runs are depth-capped, so a sub-chain that fans out into itself
+cannot recurse without bound; and the parent chain's `max_total_tokens` / `max_wallclock_seconds` are
+checked BETWEEN items, so a long list stops cleanly at the budget instead of blowing past it. A breach
+aborts the `foreach` (routes `on_failure`) - never a silent partial pass. `compose` uses this to build one
+unit per spec; see [Compose from specs](compose-from-specs.md).
 
 ### `exit` - terminate
 ```jsonc
@@ -144,8 +149,8 @@ generate -> check -> (pass) done
 
 `check` is an `action` whose `on_failure` points at `fix` (a `generate` node bound to the oracle's
 errors + the previous attempt); `recheck` re-runs the same tool. **To repair twice**, add a
-`fix2`/`recheck2` pair and point `recheck.on_failure` at `fix2` (see `examples/dotnet/flows/edit_file`,
-which repairs twice; `examples/dotnet/flows/csharp` repairs once). Keep budgets in step with the depth.
+`fix2`/`recheck2` pair and point `recheck.on_failure` at `fix2` (see `RatchetBox/dotnet4-x/flows/edit_file`,
+which repairs twice; `RatchetBox/dotnet4-x/flows/csharp` repairs once). Keep budgets in step with the depth.
 
 ## A complete minimal chain
 
@@ -175,14 +180,16 @@ which repairs twice; `examples/dotnet/flows/csharp` repairs once). Keep budgets 
 node, every `from` is a reachable predecessor, unknown tool references, and that chain + tool names do
 not collide (flat routing needs unique names).
 
-**Run state** is written to `runs/<id>/`: `meta.json` (chain, input, budgets), one `step-NNN.json` per
-node (id, kind, ok, output - including the oracle's diagnostics on a failed build), and `outcome.json`
-(`{ outcome, steps, error }`). This is your trace when a run misbehaves; `runs/` is gitignored.
+**Run state** is written to `runs/<id>/`: `meta.json` (chain, workspace, input, budgets), one
+`step-NNN.json` per node (id, kind, ok, output - including the oracle's diagnostics on a failed build),
+and `outcome.json` (`{ outcome, steps, error }`). A `generate` step also records the rendered **prompt**
+next to its output, so a run reads back as a full prompt-to-response transcript for review. This is your
+trace when a run misbehaves; `runs/` is gitignored.
 
 ## Gotchas
 
 - **A node sees only its declared `inputs`** - if a prompt references `{{ x }}`, bind `x`. There is no
-  ambient context. (This is the point - see [context-binding.md](context-binding.md).)
+  ambient context. (This is the point - see [context-binding.md](../concepts/context-binding.md).)
 - **Cap growing slots** with `max_chars`; the token budget counts the ceiling.
 - **Unroll repair, don't loop** - the engine has no cycle primitive by design (lintability +
   termination). Add explicit `fix2`/`recheck2` to go deeper.

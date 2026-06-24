@@ -3,7 +3,7 @@
 How Ratchet turns an unreliable local model into a reliable operator. The two pieces that do the work
 are the **Oracle** (deterministic verification) and **Context Binding** (scoped context per step);
 the [Lineage](#lineage) section credits what's borrowed vs new. For the user-facing commands see
-[console.md](console.md); for authoring ratchets see [ratchets.md](ratchets.md).
+[Use the console](../how-to/use-the-console.md); for authoring ratchets see [Build a ratchet](../how-to/build-a-ratchet.md).
 
 ## The core thesis
 
@@ -151,7 +151,6 @@ Runtime/         the engine: Instance (sandboxed IO), Oracle, Tsv, ToolRunner, O
                  ChainEngine, ChainLint, KbIndex, Indexer, Search (BM25 core), Embedder
 Server/Mcp.cs    the MCP server (tools/list + tools/call)
 Cli/             the console executable: Program, ConsoleChat, SelfTest
-Gui/             the legacy WinForms executable (built only with -Gui)
 ```
 
 The host is a **domain-agnostic harness**: it contains the chain engine, the dispatcher, the oracle
@@ -161,14 +160,12 @@ specific flow, tool, or knowledge - all of that lives in ratchets.
 ## Build
 
 ```
-powershell -ExecutionPolicy Bypass -File build.ps1          # console only (default): ratchet.exe
-powershell -ExecutionPolicy Bypass -File build.ps1 -Gui     # also rebuild the legacy ratchet-gui.exe
+powershell -ExecutionPolicy Bypass -File build.ps1          # ratchet.exe
 ```
 
 `build.ps1` calls the in-box .NET Framework `csc.exe` (pre-Roslyn, so the code targets **C# 5** - no
 string interpolation, `?.`, expression-bodied members, or tuples), with no SDK, NuGet, or MSBuild. It
-globs `src/` recursively and partitions by folder so each executable has one entry point: `Cli/` is
-excluded from the GUI build, `Gui/` from the console build. Non-default references:
-`System.Web.Extensions.dll` (JSON) for both; `System.Windows.Forms.dll` + `System.Drawing.dll` for the
-GUI. Verify a build with `.\ratchet.cmd selftest` (asserts the oracle, JSON, TSV, argv quoting, the
-path-escape guard, chain lint, and path conventions - all model-free).
+globs `src/` recursively into the single console executable (`Cli/` holds the one entry point). The only
+non-default reference is `System.Web.Extensions.dll` (JSON). Verify a build with `.\ratchet.cmd selftest`
+(asserts the oracle, JSON, TSV, argv quoting, the path-escape guard, chain lint, and path conventions -
+all model-free).

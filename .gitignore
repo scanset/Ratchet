@@ -1,8 +1,7 @@
-# Pre-built binaries (ratchet.exe, ratchet-gui.exe) ARE committed on purpose so downloaders can run
+# Pre-built binary (ratchet.exe) IS committed on purpose so downloaders can run
 # the host immediately via the launchers - do NOT ignore *.exe here.
 
 # Runtime / dev cruft
-ratchet-gui.error.log
 *.pdb
 _*
 

@@ -1,5 +1,6 @@
-# run-cli.ps1 - launch the ratchet console without tripping Smart App Control (see run-gui.ps1 for
-# why). Runs ratchet.exe's bytes in-memory and forwards the process exit code.
+# run-cli.ps1 - launch the ratchet console without tripping Smart App Control: an unsigned local exe is
+# blocked from running directly, but loading its bytes in-memory inside trusted PowerShell is allowed.
+# Runs ratchet.exe's bytes in-memory and forwards the process exit code.
 
 param([Parameter(ValueFromRemainingArguments = $true)][string[]] $CliArgs)
 

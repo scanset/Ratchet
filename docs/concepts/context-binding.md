@@ -2,7 +2,7 @@
 
 The discipline that decides **what each step in a chain is allowed to see**. Alongside the Oracle, it
 is the reason a weak local model becomes reliable. This is the deep dive; for the chain mechanics see
-[authoring-flows.md](authoring-flows.md), for the overview see [architecture.md](architecture.md).
+[authoring-flows.md](../how-to/author-flows.md), for the overview see [architecture.md](architecture.md).
 
 ## Why "binding"
 
@@ -110,7 +110,7 @@ declared inputs, not on whatever the model decided to emit.
 
 > Honest scope: layer 3 is a reliability/containment property, not a full security boundary. The
 > ultimate trust boundary is still "the ratchet's tools run with your privileges" (see
-> [SECURITY.md](../SECURITY.md)). Context Binding constrains *what flows into* a tool call; it does not
+> [SECURITY.md](../../SECURITY.md)). Context Binding constrains *what flows into* a tool call; it does not
 > sandbox the tool itself.
 
 ## How it composes with the Oracle

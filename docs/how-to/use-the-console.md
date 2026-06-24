@@ -63,8 +63,8 @@ reads back so a new session is not cold.
 
 ## The project lifecycle
 
-The C# reference ratchet (`examples\dotnet`) turns the workspace into a buildable project. The
-flow, using only generic verbs:
+A buildable ratchet (such as the C# reference) turns the workspace into a project. The flow, using only
+generic verbs:
 
 ```
 /do new_project Calc winforms                 # scaffold workspaces/Calc (a winforms project)

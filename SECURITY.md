@@ -47,8 +47,8 @@ Only paste commands you understand, same as any shell.
 
 ## Smart App Control and built artifacts
 
-The committed `ratchet.exe` / `ratchet-gui.exe` are unsigned, so Smart App Control blocks running them
-directly. The `.cmd` / `run-*.ps1` launchers load the program's bytes in-memory inside the
+The committed `ratchet.exe` is unsigned, so Smart App Control blocks running it
+directly. The `.cmd` / `run-cli.ps1` launchers load the program's bytes in-memory inside the
 Microsoft-signed PowerShell, which SAC permits. Likewise, a C# instance builds **unsigned** app
 executables; the `make_launcher` tool writes a `.cmd` that runs them the same in-memory way. This is
 your own local code on your own machine - use the launchers; do not disable SAC or weaken

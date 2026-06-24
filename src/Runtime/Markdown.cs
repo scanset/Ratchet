@@ -1,6 +1,6 @@
-// Markdown - a tiny, dependency-free markdown parser for the chat panel. It does NOT render; it turns
-// markdown text into a flat list of typed lines (each with inline spans). The GUI's ChatMarkdown maps
-// those to RichTextBox formatting. Keeping the parse here (no WinForms) means the console build's
+// Markdown - a tiny, dependency-free markdown parser. It does NOT render; it turns markdown text into a
+// flat list of typed lines (each with inline spans) a caller can map to its own formatting (the console
+// uses StripFence to unwrap code fences). Keeping the parse here (no UI deps) means the console build's
 // SelfTest can cover it. Supported: fenced/indented code blocks, headings, unordered/ordered lists,
 // blockquotes, horizontal rules, and inline code / bold / italic / links. This is a pragmatic subset,
 // not a CommonMark implementation.

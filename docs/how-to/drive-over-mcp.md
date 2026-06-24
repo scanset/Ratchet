@@ -6,6 +6,12 @@ capable orchestrator (Claude, or any MCP client) can take the operator seat: it 
 capabilities while the local model keeps filling the narrow, Oracle-checked slots. One engine, two
 callers.
 
+> **Two ways a frontier model drives.** Over MCP (this page), the frontier model is the orchestrator: it
+> calls the ratchet's **tools** (compile, scaffold, build, validate) and sequences them itself. It does
+> NOT run the ratchet's **flows** (`add_file`, `compose`) - those are the local model's chains, invoked
+> from the console. To have a frontier model run the flows instead, use the no-setup console hand-off:
+> [Frontier prompting](../agents/frontier-prompting.md). Same idea, different seat.
+
 ## The surface
 
 - **`tools/list`** advertises the ratchet's **declared tools** (from `tools/manifest.json`), each with
@@ -39,7 +45,7 @@ Smart App Control blocks the bare `.exe`, so point the client at the in-memory l
       "command": "powershell",
       "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
                "C:\\path\\to\\ratchet\\run-cli.ps1", "mcp",
-               "C:\\path\\to\\ratchet\\examples\\dotnet"]
+               "C:\\path\\to\\a-ratchet"]
     }
   }
 }
@@ -48,7 +54,7 @@ Smart App Control blocks the bare `.exe`, so point the client at the in-memory l
 **Claude Code:**
 
 ```
-claude mcp add ratchet -- powershell -NoProfile -ExecutionPolicy Bypass -File C:\path\to\ratchet\run-cli.ps1 mcp C:\path\to\ratchet\examples\dotnet
+claude mcp add ratchet -- powershell -NoProfile -ExecutionPolicy Bypass -File C:\path\to\ratchet\run-cli.ps1 mcp C:\path\to\a-ratchet
 ```
 
 ## Verifying the server

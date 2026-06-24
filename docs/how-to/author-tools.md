@@ -3,7 +3,7 @@
 A tool is a script (or external program) the host runs deterministically. Tools are where a ratchet
 does real work: compile, parse, scaffold, build, validate, launch. The model never invents a tool's
 command - it only fills declared arguments. This is the technical how-to; tools are invoked by
-`action` nodes ([authoring-flows.md](authoring-flows.md)) or directly with `/do`.
+`action` nodes ([authoring-flows.md](author-flows.md)) or directly with `/do`.
 
 ## Where tools live
 
@@ -85,11 +85,11 @@ if ($LASTEXITCODE -ne 0) { exit 1 }            # non-zero -> on_failure (the rep
 - **From the console** - `/do <name> [arg]` runs a declared tool by name (the remaining text maps to
   its argument / stdin). `/do <anything else>` runs as a pasted shell command instead.
 - **Over MCP** - `tools/list` advertises every declared tool with its `inputSchema`; `tools/call`
-  runs it through this same contract. (See [mcp.md](mcp.md).)
+  runs it through this same contract. (See [mcp.md](drive-over-mcp.md).)
 
 ## Patterns from the C# reference ratchet
 
-`examples/dotnet/tools/` shows the common shapes:
+`RatchetBox/dotnet4-x/tools/` shows the common shapes:
 
 - **Oracles** (`csc_check`, `ps_parse`, `csc_winforms`) - read source on stdin, exit with the
   compile/parse verdict. These are what `action` nodes call.
@@ -103,7 +103,7 @@ if ($LASTEXITCODE -ne 0) { exit 1 }            # non-zero -> on_failure (the rep
 ## Security
 
 A tool runs with **your privileges** - that is the trust boundary, and why you only open ratchets you
-trust ([SECURITY.md](../SECURITY.md)). Context Binding controls *what data flows into* a tool call
+trust ([SECURITY.md](../../SECURITY.md)). Context Binding controls *what data flows into* a tool call
 (arguments come from declared, origin-tagged slots, not free model output); it does not sandbox the
 tool itself. Keep `command` an argv array, validate inputs with `inputSchema`, and never build a tool
 that `Invoke-Expression`s an argument.
