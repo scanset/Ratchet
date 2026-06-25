@@ -207,7 +207,32 @@ namespace Icm
             s2.Transitions["go"] = "c.missing";
             s2.OutputSchema = Json.Obj("properties", Json.Obj("next", Json.Obj("enum", new object[] { "go", "other" })));
             bad.Actions["c.start"] = s2;
-            return ChainLint.Check(bad, tools).Count >= 3;
+            if (ChainLint.Check(bad, tools).Count < 3) return false;
+
+            // Flavor A: a generate prompt references an unbound slot -> must lint; binding it clears the lint.
+            var unbound = new Chain();
+            unbound.Entry = "g.gen"; unbound.NodeIds.Add("g.gen"); unbound.NodeIds.Add("g.done");
+            var gen = new ActionNode { Id = "g.gen", Kind = "generate", PromptText = "fix {{ task }} given {{ errors }}", OnSuccess = "g.done" };
+            gen.Inputs.Add(new InputBinding { As = "task", Source = "from", From = "$input", Path = "." });
+            unbound.Actions["g.gen"] = gen;
+            unbound.Actions["g.done"] = new ActionNode { Id = "g.done", Kind = "exit", Outcome = "success" };
+            if (ChainLint.Check(unbound, tools).Count == 0) return false;   // {{ errors }} has no binding
+            gen.Inputs.Add(new InputBinding { As = "errors", Source = "from", From = "$input", Path = "." });
+            if (ChainLint.Check(unbound, tools).Count != 0) return false;   // now every slot is bound
+
+            // Flavor B: a search query references a slot bound BELOW it -> must lint; reordering clears it.
+            var fwd = new Chain();
+            fwd.Entry = "s.gen"; fwd.NodeIds.Add("s.gen"); fwd.NodeIds.Add("s.done");
+            var sgen = new ActionNode { Id = "s.gen", Kind = "generate", PromptText = "{{ refs }}\n{{ task }}", OnSuccess = "s.done" };
+            sgen.Inputs.Add(new InputBinding { As = "refs", Source = "search", Lib = "kb", Query = "{{ task }}" });   // task is bound below
+            sgen.Inputs.Add(new InputBinding { As = "task", Source = "from", From = "$input", Path = "." });
+            fwd.Actions["s.gen"] = sgen;
+            fwd.Actions["s.done"] = new ActionNode { Id = "s.done", Kind = "exit", Outcome = "success" };
+            if (ChainLint.Check(fwd, tools).Count == 0) return false;   // query reads {{ task }} bound below it
+            sgen.Inputs.Clear();
+            sgen.Inputs.Add(new InputBinding { As = "task", Source = "from", From = "$input", Path = "." });
+            sgen.Inputs.Add(new InputBinding { As = "refs", Source = "search", Lib = "kb", Query = "{{ task }}" });
+            return ChainLint.Check(fwd, tools).Count == 0;   // task now resolved above the search
         }
 
         private static bool RouterGate()

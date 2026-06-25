@@ -28,7 +28,7 @@ namespace Icm
         private const int DecideTimeoutMs = 60000;
         private const int MaxDepth = 8;             // foreach nesting cap: a sub-chain that foreach-es back into one would recurse without bound
 
-        private static readonly Regex SlotRe = new Regex(@"\{\{\s*([A-Za-z0-9_\-]+)\s*\}\}", RegexOptions.Compiled);
+        internal static readonly Regex SlotRe = new Regex(@"\{\{\s*([A-Za-z0-9_\-]+)\s*\}\}", RegexOptions.Compiled);
 
         private readonly Instance icm;
         private readonly Dispatcher disp;
@@ -314,6 +314,7 @@ namespace Icm
 
         private string ReadPrompt(ActionNode a)
         {
+            if (a.PromptText != null) return a.PromptText;   // inline body (set in code / tests) wins over the file
             if (string.IsNullOrEmpty(a.Prompt) || string.IsNullOrEmpty(a.Dir)) return "";
             string rel = a.Prompt.Replace("./", "").Replace(".\\", "");
             try { return System.IO.File.ReadAllText(System.IO.Path.Combine(a.Dir, rel)); }

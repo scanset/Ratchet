@@ -69,7 +69,8 @@ namespace Icm
         public string OnSuccess;
         public string OnFailure;
         // ai_branch
-        public string Prompt;      // ./prompt.md
+        public string Prompt;      // ./prompt.md (read from Dir at runtime)
+        public string PromptText;  // inline prompt body; when set it is used instead of reading Prompt (in-memory chains / tests)
         public Dictionary<string, object> OutputSchema;
         public Dictionary<string, string> Transitions = new Dictionary<string, string>();
         // exit

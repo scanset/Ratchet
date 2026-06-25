@@ -7,12 +7,17 @@
 //   - ai_branch `transitions` keys == `output_schema.next.enum`
 //   - every `inputs[].from` is a reachable PREDECESSOR (BFS from entry)
 //   - a referenced tool is declared; a ref/search binding names a library; a binding has an `as`
-//   - ai_branch prompt.md exists and fits a rough token budget
+//   - generate/ai_branch prompt.md exists and fits a rough token budget
+//   - every {{ slot }} a prompt names is a declared input binding (`as`) - else it renders empty (Flavor A)
+//   - every {{ slot }} a search query names is bound ABOVE it in the same node's inputs (a search sees
+//     only slots resolved earlier) - else it renders an empty query and retrieves nothing (Flavor B)
+// The last two close the silent empty-slot seam: a binding contract that under-delivers now fails at lint.
 // Pure + (mostly) static so SelfTest can cover it with an in-memory Chain.
 
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Icm
 {
@@ -50,6 +55,7 @@ namespace Icm
                     if (ib.Source == "search" && string.IsNullOrEmpty(ib.Lib)) p.Add(w + ": search binding has no library");
                     if (ib.Source.Length == 0) p.Add(w + ": input '" + ib.As + "' has no source (from/ref/search)");
                 }
+                CheckSearchRefs(a, w, p);
 
                 if (a.Kind == Conventions.ActionKind.Action)
                 {
@@ -59,13 +65,13 @@ namespace Icm
                 }
                 else if (a.Kind == Conventions.ActionKind.Generate)
                 {
-                    if (string.IsNullOrEmpty(a.Prompt)) p.Add(w + ": generate needs 'prompt'");
+                    if (string.IsNullOrEmpty(a.Prompt) && string.IsNullOrEmpty(a.PromptText)) p.Add(w + ": generate needs 'prompt'");
                     if (string.IsNullOrEmpty(a.OnSuccess)) p.Add(w + ": generate needs 'on_success'");
                     CheckPrompt(a, w, p);
                 }
                 else if (a.Kind == Conventions.ActionKind.AiBranch)
                 {
-                    if (string.IsNullOrEmpty(a.Prompt)) p.Add(w + ": ai_branch needs 'prompt'");
+                    if (string.IsNullOrEmpty(a.Prompt) && string.IsNullOrEmpty(a.PromptText)) p.Add(w + ": ai_branch needs 'prompt'");
                     if (a.Transitions.Count < 2) p.Add(w + ": ai_branch needs at least 2 transitions");
                     var keys = new HashSet<string>(a.Transitions.Keys);
                     HashSet<string> enumVals = NextEnum(a.OutputSchema);
@@ -104,18 +110,48 @@ namespace Icm
             return p;
         }
 
+        // Token budget + the slot-reference contract: every {{ slot }} the prompt names must be a declared
+        // input binding, else Render substitutes "" and the model silently sees an empty intended slot.
         private static void CheckPrompt(ActionNode a, string w, List<string> p)
         {
-            if (string.IsNullOrEmpty(a.Prompt) || string.IsNullOrEmpty(a.Dir)) return; // Prompt missing already reported / in-memory chain
-            string rel = a.Prompt.Replace("./", "").Replace(".\\", "");
-            string path = Path.Combine(a.Dir, rel);
-            if (!File.Exists(path)) { p.Add(w + ": prompt file '" + a.Prompt + "' not found"); return; }
-            try
+            string body = a.PromptText;   // inline body (in-memory chains / tests) takes priority over the file
+            if (body == null)
             {
-                int tokens = (File.ReadAllText(path).Length + CharsPerToken - 1) / CharsPerToken;
-                if (tokens > PromptBodyLimit) p.Add(w + ": prompt body " + tokens + " tokens > limit " + PromptBodyLimit);
+                if (string.IsNullOrEmpty(a.Prompt) || string.IsNullOrEmpty(a.Dir)) return; // missing prompt already reported / no file to read
+                string rel = a.Prompt.Replace("./", "").Replace(".\\", "");
+                string path = Path.Combine(a.Dir, rel);
+                if (!File.Exists(path)) { p.Add(w + ": prompt file '" + a.Prompt + "' not found"); return; }
+                try { body = File.ReadAllText(path); }
+                catch { return; }
             }
-            catch { }
+            int tokens = (body.Length + CharsPerToken - 1) / CharsPerToken;
+            if (tokens > PromptBodyLimit) p.Add(w + ": prompt body " + tokens + " tokens > limit " + PromptBodyLimit);
+
+            var bound = new HashSet<string>();
+            foreach (InputBinding ib in a.Inputs) if (!string.IsNullOrEmpty(ib.As)) bound.Add(ib.As);
+            foreach (Match m in ChainEngine.SlotRe.Matches(body))
+            {
+                string slot = m.Groups[1].Value;
+                if (!bound.Contains(slot)) p.Add(w + ": prompt references {{ " + slot + " }} but no input binds it (add an input with as: \"" + slot + "\")");
+            }
+        }
+
+        // A search binding's query is rendered over slots resolved SO FAR (ResolveSlots walks inputs[]
+        // top-to-bottom). A {{ slot }} bound at or below the search renders empty -> the query is empty ->
+        // retrieval silently returns nothing. So every slot a query names must be bound by an EARLIER input.
+        private static void CheckSearchRefs(ActionNode a, string w, List<string> p)
+        {
+            var seen = new HashSet<string>();
+            foreach (InputBinding ib in a.Inputs)
+            {
+                if (ib.Source == "search" && !string.IsNullOrEmpty(ib.Query))
+                    foreach (Match m in ChainEngine.SlotRe.Matches(ib.Query))
+                    {
+                        string slot = m.Groups[1].Value;
+                        if (!seen.Contains(slot)) p.Add(w + ": search '" + ib.As + "' query references {{ " + slot + " }} but no earlier input binds it (a search sees only slots resolved above it)");
+                    }
+                if (!string.IsNullOrEmpty(ib.As)) seen.Add(ib.As);
+            }
         }
 
         private static Dictionary<string, int> Bfs(Chain c)
