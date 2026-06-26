@@ -141,7 +141,7 @@ inside a static, oracle-gated control graph - is the system.
 
 ## Source layout
 
-The engine is Go (module `github.com/CurtisSlone/Ratchet`, rooted in `go_src/`). `internal/` is Go's
+The engine is Go (module `github.com/scanset/Ratchet`, rooted in `go_src/`). `internal/` is Go's
 enforced-private boundary - these packages are the engine, not a public API.
 
 ```

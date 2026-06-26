@@ -9,16 +9,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/chain"
-	"github.com/CurtisSlone/Ratchet/internal/dispatch"
-	"github.com/CurtisSlone/Ratchet/internal/instance"
-	"github.com/CurtisSlone/Ratchet/internal/mcp"
-	"github.com/CurtisSlone/Ratchet/internal/model"
-	"github.com/CurtisSlone/Ratchet/internal/ollama"
-	"github.com/CurtisSlone/Ratchet/internal/oracle"
-	"github.com/CurtisSlone/Ratchet/internal/search"
-	"github.com/CurtisSlone/Ratchet/internal/tool"
-	"github.com/CurtisSlone/Ratchet/internal/version"
+	"github.com/scanset/Ratchet/internal/chain"
+	"github.com/scanset/Ratchet/internal/dispatch"
+	"github.com/scanset/Ratchet/internal/instance"
+	"github.com/scanset/Ratchet/internal/mcp"
+	"github.com/scanset/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/ollama"
+	"github.com/scanset/Ratchet/internal/oracle"
+	"github.com/scanset/Ratchet/internal/search"
+	"github.com/scanset/Ratchet/internal/tool"
+	"github.com/scanset/Ratchet/internal/version"
 )
 
 const (

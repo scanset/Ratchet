@@ -6,7 +6,7 @@ package model
 import (
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/jsonx"
 )
 
 // KnowledgeBase is a named, searchable directory. Path is absolute once resolved through the registry.

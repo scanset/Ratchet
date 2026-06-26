@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/ollama"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/ollama"
 )
 
 const embCacheFile = ".emb_cache.routing.json"

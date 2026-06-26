@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/conventions"
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/meta"
-	"github.com/CurtisSlone/Ratchet/internal/model"
-	"github.com/CurtisSlone/Ratchet/internal/ollama"
-	"github.com/CurtisSlone/Ratchet/internal/search"
+	"github.com/scanset/Ratchet/internal/conventions"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/meta"
+	"github.com/scanset/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/ollama"
+	"github.com/scanset/Ratchet/internal/search"
 )
 
 // doSearchKb grounds an answer on a knowledge source. Source resolution: a registered KB name, a path

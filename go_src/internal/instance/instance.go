@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/config"
-	"github.com/CurtisSlone/Ratchet/internal/conventions"
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/meta"
-	"github.com/CurtisSlone/Ratchet/internal/model"
-	"github.com/CurtisSlone/Ratchet/internal/pathutil"
+	"github.com/scanset/Ratchet/internal/config"
+	"github.com/scanset/Ratchet/internal/conventions"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/meta"
+	"github.com/scanset/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/pathutil"
 )
 
 // Instance is the root, config, and manifest of a loaded ratchet.

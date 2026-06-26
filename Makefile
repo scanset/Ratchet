@@ -10,7 +10,7 @@ SRC     := go_src
 # NOTE: no trailing inline comments on these - Make would capture the spaces into the value.
 PKG     := ./cmd/ratchet
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS := -s -w -X github.com/CurtisSlone/Ratchet/internal/version.Version=$(VERSION)
+LDFLAGS := -s -w -X github.com/scanset/Ratchet/internal/version.Version=$(VERSION)
 GOFLAGS := -trimpath
 BIN     := ratchet
 BINROOT := $(CURDIR)/bins

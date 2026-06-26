@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/jsonx"
 )
 
 const numCtx = 8192 // Ollama's default 2048 silently truncates long prompts.

@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/conventions"
-	"github.com/CurtisSlone/Ratchet/internal/dispatch"
-	"github.com/CurtisSlone/Ratchet/internal/instance"
-	"github.com/CurtisSlone/Ratchet/internal/ollama"
+	"github.com/scanset/Ratchet/internal/conventions"
+	"github.com/scanset/Ratchet/internal/dispatch"
+	"github.com/scanset/Ratchet/internal/instance"
+	"github.com/scanset/Ratchet/internal/ollama"
 )
 
 // runConsole is the operator console: a thin REPL over a Dispatcher. The conversation, routing, and

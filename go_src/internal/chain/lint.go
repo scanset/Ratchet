@@ -17,9 +17,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/conventions"
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/conventions"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/model"
 )
 
 // SlotRe matches a {{ slot }} reference in a prompt/template. Shared by ChainLint and ChainEngine.

@@ -3,7 +3,7 @@ package oracle
 import (
 	"testing"
 
-	"github.com/CurtisSlone/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/model"
 )
 
 func fptr(f float64) *float64 { return &f }

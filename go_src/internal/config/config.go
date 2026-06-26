@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/model"
 )
 
 // Models holds the three model seats.

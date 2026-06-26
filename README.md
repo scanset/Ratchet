@@ -67,10 +67,10 @@ ratchet selftest
 **4. Get some ratchets.** Ratchet ships no bundled ratchets - clone the companion collection:
 
 ```
-git clone https://github.com/CurtisSlone/RatchetBox
+git clone https://github.com/scanset/RatchetBox
 ```
 
-[RatchetBox](https://github.com/CurtisSlone/RatchetBox) holds ready-made ratchets, grouped by the
+[RatchetBox](https://github.com/scanset/RatchetBox) holds ready-made ratchets, grouped by the
 platform their toolchain targets: `Linux/go` (Go, verified with `go build` - the cross-platform
 reference), and under `Windows/`: `dotnet4-x` (C# / in-box csc), `cpp` (C++ / MSVC), and `template`
 (an empty, self-documented skeleton to copy).
@@ -97,7 +97,7 @@ make_launcher Calc` builds a runnable WinForms app. See **[Use the console](docs
 for the full command set and lifecycle.
 
 **Want to see real input/output first?** `Windows/dotnet4-x` and `Windows/cpp` carry a `transcripts/`
-folder (in [RatchetBox](https://github.com/CurtisSlone/RatchetBox)) with end-to-end build transcripts -
+folder (in [RatchetBox](https://github.com/scanset/RatchetBox)) with end-to-end build transcripts -
 the exact commands sent, the code the self-hosted model generated, the build/oracle results, and the
 per-turn token counts. The fastest way to understand what driving Ratchet looks like.
 

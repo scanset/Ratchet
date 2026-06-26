@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CurtisSlone/Ratchet/internal/conventions"
-	"github.com/CurtisSlone/Ratchet/internal/instance"
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/ollama"
-	"github.com/CurtisSlone/Ratchet/internal/search"
+	"github.com/scanset/Ratchet/internal/conventions"
+	"github.com/scanset/Ratchet/internal/instance"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/ollama"
+	"github.com/scanset/Ratchet/internal/search"
 )
 
 // Doctor preflights the ratchet's declared requirements against the host. Returns 0 when all required

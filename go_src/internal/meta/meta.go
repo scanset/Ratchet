@@ -13,8 +13,8 @@ package meta
 import (
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/conventions"
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/conventions"
+	"github.com/scanset/Ratchet/internal/jsonx"
 )
 
 // ExtractMeta returns the metadata object inside a file's <!--icm ... --> block, or nil if

@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/model"
-	"github.com/CurtisSlone/Ratchet/internal/ollama"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/ollama"
 )
 
 // doChat is plain-text conversation: UNGROUNDED chat. The model is told it cannot act (the operator

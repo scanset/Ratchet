@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/jsonx"
 )
 
 // Ports SelfTest.MetaBlock.

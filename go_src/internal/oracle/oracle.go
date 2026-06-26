@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CurtisSlone/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/model"
 )
 
 // RefSet maps a table name to the set of valid ids in its key column (for cross-table ref checks).

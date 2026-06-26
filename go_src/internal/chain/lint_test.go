@@ -3,8 +3,8 @@ package chain
 import (
 	"testing"
 
-	"github.com/CurtisSlone/Ratchet/internal/jsonx"
-	"github.com/CurtisSlone/Ratchet/internal/model"
+	"github.com/scanset/Ratchet/internal/jsonx"
+	"github.com/scanset/Ratchet/internal/model"
 )
 
 // Ports SelfTest.ChainLintCheck.

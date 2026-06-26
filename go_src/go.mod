@@ -1,3 +1,3 @@
-module github.com/CurtisSlone/Ratchet
+module github.com/scanset/Ratchet
 
 go 1.26

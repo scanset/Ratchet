@@ -7,7 +7,7 @@ package main
 import (
 	"os"
 
-	"github.com/CurtisSlone/Ratchet/internal/cli"
+	"github.com/scanset/Ratchet/internal/cli"
 )
 
 func main() {

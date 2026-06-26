@@ -28,7 +28,7 @@ symlink to `bins/linux-amd64/ratchet`, so a rebuild updates it.
 
 ## Repo layout
 
-Module `github.com/CurtisSlone/Ratchet`, rooted in `go_src/`. `internal/` is Go's enforced-private
+Module `github.com/scanset/Ratchet`, rooted in `go_src/`. `internal/` is Go's enforced-private
 boundary: these packages are the engine's implementation, not a public API.
 
 ```
