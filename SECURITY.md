@@ -83,5 +83,5 @@ public exploit details before a fix is available.
 
 ## No warranty
 
-This software is provided under the MIT License, "as is", without warranty of any kind. You are
+This software is provided under the Apache License 2.0, "as is", without warranty of any kind. You are
 responsible for what you run.
