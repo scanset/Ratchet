@@ -1,15 +1,14 @@
 # Run record schema (the contract)
 
 This is the data contract for what a chain run writes to `runs/<runID>/`. It is the typed-struct
-spec the engine implements and that any reader (the console, the CLI, future tooling, ProofLayer)
-parses against. Every record carries `schema_version` so the format can evolve without breaking
-readers.
+spec the engine implements and that any reader (the console, the CLI, tooling) parses against. Every
+record carries `schema_version` so the format can evolve without breaking readers.
 
-> **Status.** This document is the target schema (`schema_version` 1). Today's engine writes a thinner
-> record (meta/step/outcome with fewer fields and no snapshot, change manifest, or hash chain). This
-> spec supersedes that. The hash chain is recorded but **not yet signed or witnessed**; that is the
-> planned verifiable-log layer (see [Observability](observability.md)). Recording the hashes now makes
-> the record tamper-evident-ready, not tamper-evident.
+> **Scope.** This is a local audit log: enough observability to see what a run did, what it changed, and
+> to roll it back. It is deliberately **not** a signed or tamper-evident log (no hash chain, no
+> witnessing); that verifiable-provenance direction is out of scope for this project. Per-artifact
+> content hashes (`input_sha256`, `output_sha256`, and the change manifest's before/after hashes) are
+> kept because rollback and diffing need them, not as a tamper-evidence claim.
 
 ## On-disk layout
 
@@ -97,9 +96,6 @@ type Step struct {
 	Retrieval *Retrieval `json:"retrieval,omitempty"` // query, top-k entries + scores, cache hit
 	Bindings  []Binding  `json:"bindings,omitempty"`  // which slots, sources, sizes
 	Timing    *Timing    `json:"timing,omitempty"`    // Ollama load/prompt/eval durations, tok/s
-
-	PrevHash string `json:"prev_hash"`                    // hash chain
-	Hash     string `json:"hash"`
 }
 
 type Tokens struct {
@@ -141,8 +137,6 @@ type Outcome struct {
 	ChangedFiles   int     `json:"changed_files"`
 	Rollbackable   bool    `json:"rollbackable"`            // snapshot present and within retention
 	SnapshotPath   string  `json:"snapshot_path,omitempty"`
-	PrevHash       string  `json:"prev_hash"`               // hash chain (last step's hash)
-	RootHash       string  `json:"root_hash"`               // covers the whole run
 }
 
 // IndexEntry is one entry appended to runs/index.json.
@@ -194,27 +188,7 @@ type Timing struct {
 | `ai_branch` | `next` |
 | `exit` | `outcome` |
 
-Common to every step: `schema_version`, `index`, `node`, `kind`, `started`, `duration_ms`,
-`prev_hash`, `hash`.
-
-## The hash chain
-
-Deterministic so the chain is reproducible: canonical form is the struct marshaled with `encoding/json`
-(struct-declared field order) with the record's own `hash`/`root_hash` field set to empty before
-hashing.
-
-```
-meta_hash      = sha256(canonical(meta))
-step[0].prev_hash = meta_hash
-step[i].prev_hash = step[i-1].hash            (i > 0)
-step[i].hash      = sha256(canonical(step[i] with hash=""))   // prev_hash is inside, so it is bound
-outcome.prev_hash = step[last].hash           (or meta_hash if no steps)
-outcome.root_hash = sha256(canonical(outcome with root_hash=""))
-```
-
-`root_hash` transitively covers meta and every step. When the verifiable-log layer lands, you sign
-`root_hash` and gain inclusion/consistency proofs. Until then it is an integrity check, not a proof of
-non-tampering (anyone who can rewrite the files can recompute the chain). Label it accordingly.
+Common to every step: `schema_version`, `index`, `node`, `kind`, `started`, `duration_ms`.
 
 ## Example (abbreviated)
 
@@ -250,9 +224,7 @@ non-tampering (anyone who can rewrite the files can recompute the chain). Label 
   "tokens": { "prompt": 1840, "completion": 420, "total": 2260 },
   "model": "qwen3-coder:latest",
   "repair_index": 1,
-  "output_sha256": "be41...",
-  "prev_hash": "aa10...",
-  "hash": "c7d9..."
+  "output_sha256": "be41..."
 }
 ```
 
@@ -272,9 +244,7 @@ non-tampering (anyone who can rewrite the files can recompute the chain). Label 
   "oracle_pass_rate": 1.0,
   "changed_files": 2,
   "rollbackable": true,
-  "snapshot_path": "runs/20260626-101455-450/workspace-before",
-  "prev_hash": "c7d9...",
-  "root_hash": "f0a3..."
+  "snapshot_path": "runs/20260626-101455-450/workspace-before"
 }
 ```
 

@@ -43,7 +43,9 @@ The launch config. Open with `ratchet <dir>` (finds `ratchet.json`) or `ratchet 
 - **`router.autorun`** - `confirm` (default; propose + `y/n`), `on` (auto-run high-confidence), or
   `off`. Governs `/route`.
 - **`knowledgeBases`** - one or more searchable libraries, each a name + a path (which may point
-  anywhere on disk) + an optional `default`. A conventional `kb/` is picked up automatically.
+  anywhere on disk) + an optional `default`. A conventional `kb/` is picked up automatically. A ratchet
+  may instead register libraries in a top-level `kb/catalog.json` (the engine prefers it when present);
+  see [Knowledge bases](knowledge-bases.md).
 - **`workdir`** and dir overrides (`flowsDir`, `toolsDir`, `schemasDir`, `samplesDir`,
   `workspacesDir`) - optional. `workdir` is the write/sandbox root (default: the config's folder);
   each bucket defaults under it, or set a field to point elsewhere (e.g. a shared base). `workspacesDir`

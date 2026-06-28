@@ -19,6 +19,13 @@ patterns - so a small model answers from sources instead of guessing.
 `path` may point anywhere (inside or outside the ratchet). One library can be the `default` - searched
 when a query names no library.
 
+Alternatively (and **preferred when present**), a ratchet registers its libraries in a top-level
+`kb/catalog.json` - an entry list `{ "name", "path", "default"[, "summary"] }`. The engine reads
+`kb/catalog.json` as the registry if it exists and falls back to `knowledgeBases[]` otherwise. This keeps
+`ratchet.json` thin, co-locates the registry with the libraries it describes, and lets a ratchet tool
+auto-generate and maintain it (discover the `kb/*` dirs, keep the authored `summary` lines). `doctor`
+validates every registered library either way.
+
 ## How a topic is indexed
 
 One topic per markdown file under the library directory. When you index, each file becomes one entry:
@@ -45,9 +52,13 @@ ratchet index <ratchet>\kb\<lib>      # writes kb/<lib>/manifest.json
 
 ## How retrieval works
 
-By default retrieval is **BM25** (keyword scoring over the manifest). If the ratchet sets an **embed**
-model seat, the embedder **re-ranks** the BM25 hits semantically (vectors cached in `.index/`). Either
-way the result is the top-k entries' content, capped, injected into the slot you bound it to.
+By default retrieval is **BM25** (keyword scoring over the manifest). The tokenizer lowercases and
+light-stems, so plural/verb forms fold together (`channels` ~ `channel`, `goroutines` ~ `goroutine`) on
+both the query and the indexed text. `ratchet tokenize` exposes that exact tokenizer (stdin lines ->
+token lines) so a tool can fold words identically to retrieval instead of reimplementing it. If the
+ratchet sets an **embed** model seat, the embedder **re-ranks** the BM25 hits semantically (vectors
+cached in `.index/`). Either way the result is the top-k entries' content, capped, injected into the slot
+you bound it to.
 
 ## How a flow uses the kb
 
@@ -68,7 +79,8 @@ needs. See [Author flows](author-flows.md) and [Context Binding](../concepts/con
    prose line sharp - they become the routing title and summary.
 2. **Index it.** `ratchet index <ratchet>\kb\<lib>` -> writes `kb/<lib>/manifest.json`. Re-run after edits.
 3. **Register it.** Add `{ "name": "<lib>", "path": "kb/<lib>" }` to `knowledgeBases[]` in `ratchet.json`
-   (one library may be `default`).
+   (one library may be `default`) - or, if the ratchet uses a `kb/catalog.json` registry, add the entry
+   there (or run the ratchet's catalog tool to auto-discover it).
 4. **Wire it in.** Add a `search` or `ref` binding to the flow nodes that should ground on it (or the
    plan-routed pattern for multi-library routing).
 5. **Verify.** `ratchet doctor <ratchet>` checks the library (manifest present, entry count matches), then

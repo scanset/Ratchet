@@ -205,15 +205,23 @@ func Pointer(root any, pointer string) any {
 		if token == "" {
 			continue // leading empty from the first '/'
 		}
-		obj := AsObject(cur)
-		if obj == nil {
-			return nil
+		if obj := AsObject(cur); obj != nil {
+			next, ok := obj[token]
+			if !ok {
+				return nil
+			}
+			cur = next
+			continue
 		}
-		next, ok := obj[token]
-		if !ok {
-			return nil
+		if arr, ok := cur.([]any); ok { // array index token (JSON Pointer: e.g. selections/0/kb)
+			idx, err := strconv.Atoi(token)
+			if err != nil || idx < 0 || idx >= len(arr) {
+				return nil
+			}
+			cur = arr[idx]
+			continue
 		}
-		cur = next
+		return nil
 	}
 	return cur
 }

@@ -100,11 +100,17 @@ func (i *Instance) WorkspacesDirAbs() string {
 	return i.dirOr(i.Config.WorkspacesDir, conventions.WorkspacesDir)
 }
 
-// Knowledge composes the knowledge registry from this config's knowledgeBases (paths resolve against
-// the config file). A conventional kb/ under the workdir is added as a default if none is declared.
+// Knowledge composes the knowledge registry. It prefers a top-level kb/catalog.json (the high-level KB
+// manifest: name/path/default/summary); if absent it falls back to this config's knowledgeBases[], so
+// ratchets without a catalog work unchanged. Paths resolve against the config file. A conventional kb/
+// under the workdir is added as a default if none is declared.
 func (i *Instance) Knowledge() *model.KnowledgeRegistry {
 	reg := &model.KnowledgeRegistry{}
-	for _, kb := range i.Config.KnowledgeBases {
+	bases := i.loadKbCatalog()
+	if len(bases) == 0 {
+		bases = i.Config.KnowledgeBases
+	}
+	for _, kb := range bases {
 		reg.Add(kb.Name, pathutil.ResolveAgainst(i.Config.SourcePath, kb.Path), kb.Default)
 	}
 	if reg.Find("kb") == nil {
@@ -114,6 +120,20 @@ func (i *Instance) Knowledge() *model.KnowledgeRegistry {
 		}
 	}
 	return reg
+}
+
+// loadKbCatalog reads kb/catalog.json (the high-level KB registry) into KnowledgeBase entries, or nil
+// if it is absent or unreadable. The entries carry extra fields (docs/summary) the registry ignores.
+func (i *Instance) loadKbCatalog() []model.KnowledgeBase {
+	data, err := os.ReadFile(filepath.Join(i.dirOr("", conventions.KbDir), conventions.KbCatalogFile))
+	if err != nil {
+		return nil
+	}
+	root := jsonx.AsObject(mustParse(data))
+	if root == nil {
+		return nil
+	}
+	return model.LoadKnowledgeList(jsonx.GetArr(root, "entries"))
 }
 
 // Tools composes the tool set: config.tools[], then toolsDir/manifest.json declarations, then any bare

@@ -25,7 +25,8 @@ const (
 	SamplesDir    = "samples"
 	FlowsDir      = "flows"
 	KbDir         = "kb"
-	RecipesDir    = "recipes" // recipe bucket (prompt + bound flow/tool); also a knowledge bucket
+	KbCatalogFile = "catalog.json" // kb/catalog.json: the high-level KB registry (name/path/default/summary)
+	RecipesDir    = "recipes"       // recipe bucket (prompt + bound flow/tool); also a knowledge bucket
 	ToolsDir      = "tools"
 	WorkspacesDir = "workspaces" // container of project workspaces (replaces out/)
 	IndexDir      = ".index"     // per-instance search-index cache (keyed by KB name)

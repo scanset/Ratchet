@@ -3,6 +3,7 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -44,7 +45,7 @@ func arg(args []string, i int) string {
 
 func isCommand(s string) bool {
 	switch s {
-	case "open", "chat", "mcp", "flow", "validate", "reindex", "index", "list", "flows", "tools",
+	case "open", "chat", "mcp", "flow", "validate", "reindex", "index", "tokenize", "list", "flows", "tools",
 		"runs", "rollback", "validate-flow", "doctor", "gen", "selftest", "version", "help", "-h", "--help", "-v", "--version":
 		return true
 	}
@@ -145,6 +146,8 @@ func Run(args []string) int {
 		return cmdRuns(args)
 	case "rollback":
 		return cmdRollback(args)
+	case "tokenize":
+		return cmdTokenize()
 	case "selftest":
 		if SelfTest() != 0 {
 			return 2
@@ -348,6 +351,18 @@ func cmdFlow(args []string) int {
 	return 0
 }
 
+// cmdTokenize is a stdin filter exposing the engine's canonical tokenizer (search.Tokens: lowercase,
+// [a-z0-9_]+, light-stemmed) so tools (e.g. the route_score oracle) tokenize identically to retrieval
+// instead of reimplementing the stemmer. Each input line -> one output line of space-joined tokens.
+func cmdTokenize() int {
+	sc := bufio.NewScanner(os.Stdin)
+	sc.Buffer(make([]byte, 0, 64*1024), 8*1024*1024)
+	for sc.Scan() {
+		fmt.Println(strings.Join(search.Tokens(sc.Text()), " "))
+	}
+	return 0
+}
+
 func cmdRuns(args []string) int {
 	dir := arg(args, 1)
 	if dir == "" {
@@ -515,6 +530,7 @@ const usage = `ratchet - the cross-platform ICM host
   ratchet doctor <dir>                preflight a ratchet's declared toolchain
   ratchet reindex <dir>               regenerate manifest.json from <!--icm--> blocks
   ratchet index <kb-dir>              build manifest.json for a knowledge library
+  ratchet tokenize                    tokenize stdin lines with the search tokenizer (tokens per line)
   ratchet list  <dir> [--group G] [--type T] [--json]   enumerate the KB catalog
   ratchet flows <dir>                 list the instance's flows
   ratchet tools <dir>                 list the instance's declared tools

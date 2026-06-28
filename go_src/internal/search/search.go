@@ -94,14 +94,48 @@ func Bm25Scored(docs []Doc, query string) []Scored {
 	return scores
 }
 
-// Tokens lowercases s and splits it into [a-z0-9_]+ tokens.
+// Tokens lowercases s, splits it into [a-z0-9_]+ tokens, and light-stems each so word forms collapse
+// to a shared root (channels->channel, matches->match, indexing->index). Applied to both query and doc
+// text in Bm25Scored, so retrieval is self-consistent. The go ratchet's route_score oracle mirrors
+// these exact stem rules so the routing gate predicts what retrieval does.
 func Tokens(s string) []string {
 	var out []string
 	if s == "" {
 		return out
 	}
 	for _, m := range tokRe.FindAllString(strings.ToLower(s), -1) {
-		out = append(out, m)
+		out = append(out, stem(m))
 	}
 	return out
+}
+
+// stemSuffixes are tried in order; the first match with at least 3 letters remaining is stripped.
+// Light by design (not a full Porter stemmer): enough to fold plural/verb forms, mirrored verbatim in
+// tools/route_score.sh. BM25's IDF already handles common words, so no stopword list is needed here.
+var stemSuffixes = []string{"izations", "ization", "ies", "ing", "edly", "ed"}
+
+// stem folds word forms to a shared root. Plurals: "es" is a real suffix only after a sibilant
+// (boxes->box, matches->match); otherwise just the trailing "s" is removed (goroutines->goroutine,
+// names->name) so singular and plural agree. Mirror tools/route_score.sh exactly if this changes.
+func stem(t string) string {
+	for _, suf := range stemSuffixes {
+		if len(t)-len(suf) >= 3 && strings.HasSuffix(t, suf) {
+			if suf == "ies" {
+				return t[:len(t)-len(suf)] + "y"
+			}
+			return t[:len(t)-len(suf)]
+		}
+	}
+	if len(t) >= 5 && strings.HasSuffix(t, "es") {
+		base := t[:len(t)-2]
+		if strings.HasSuffix(base, "ch") || strings.HasSuffix(base, "sh") ||
+			strings.IndexByte("sxz", base[len(base)-1]) >= 0 {
+			return base // boxes->box, dishes->dish, buzzes->buzz
+		}
+		return t[:len(t)-1] // goroutines->goroutine, names->name
+	}
+	if len(t) >= 4 && strings.HasSuffix(t, "s") && !strings.HasSuffix(t, "ss") {
+		return t[:len(t)-1] // channels->channel, pods->pod
+	}
+	return t
 }

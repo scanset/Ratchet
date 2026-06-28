@@ -9,32 +9,13 @@ import (
 	"github.com/scanset/Ratchet/internal/instance"
 )
 
-func TestHashDeterministicAndSensitive(t *testing.T) {
-	m := Meta{RunID: "r1", Kind: KindFlow, ChainID: "c", Input: "x"}
-	h1 := HashMeta(m)
-	if h1 != HashMeta(m) {
-		t.Fatal("HashMeta not deterministic")
+func TestSha256Hex(t *testing.T) {
+	h := Sha256Hex([]byte("abc"))
+	if len(h) != 64 {
+		t.Fatalf("sha256 hex want 64 chars, got %d", len(h))
 	}
-	if len(h1) != 64 {
-		t.Fatalf("sha256 hex want 64 chars, got %d", len(h1))
-	}
-	m2 := m
-	m2.Input = "y"
-	if HashMeta(m2) == h1 {
-		t.Fatal("HashMeta insensitive to a field change")
-	}
-}
-
-func TestStepHashChainBinding(t *testing.T) {
-	s := Step{Index: 1, Node: "n", Kind: "generate", PrevHash: "AAAA"}
-	h := s.computeHash()
-	if s.computeHash() != h {
-		t.Fatal("step hash not stable")
-	}
-	s2 := s
-	s2.PrevHash = "BBBB"
-	if s2.computeHash() == h {
-		t.Fatal("prev_hash is not bound into the step hash (chain would be forgeable)")
+	if Sha256Hex([]byte("abc")) != h || Sha256Hex([]byte("abd")) == h {
+		t.Fatal("Sha256Hex not deterministic/sensitive")
 	}
 }
 
@@ -53,15 +34,13 @@ func TestIORoundTripAndUniqueID(t *testing.T) {
 	now := time.Now()
 	id := UniqueRunID(inst, now)
 	m := Meta{RunID: id, Kind: KindFlow, ChainID: "c", Workspace: "proj"}
-	prev, err := WriteMeta(inst, m)
-	if err != nil || len(prev) != 64 {
-		t.Fatalf("WriteMeta: %v hash=%q", err, prev)
-	}
-	prev, err = WriteStep(inst, id, Step{Index: 1, Node: "n", Kind: "generate"}, prev)
-	if err != nil {
+	if err := WriteMeta(inst, m); err != nil {
 		t.Fatal(err)
 	}
-	if err := WriteOutcome(inst, id, Outcome{Outcome: "ok", Steps: 1}, prev); err != nil {
+	if err := WriteStep(inst, id, Step{Index: 1, Node: "n", Kind: "generate"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := WriteOutcome(inst, id, Outcome{Outcome: "ok", Steps: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if err := AppendIndex(inst, IndexEntry{RunID: id, Workspace: "proj", Outcome: "ok", Rollbackable: true}); err != nil {

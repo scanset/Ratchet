@@ -1,6 +1,6 @@
 // Package runrec is the data contract for what a chain run writes to runs/<runID>/.
-// It defines the typed records (meta, step, change, outcome, index entry), the deterministic
-// hash chain over them, and helpers to read/write them through the instance sandbox.
+// It defines the typed records (meta, step, change, outcome, index entry) and helpers to read/write
+// them through the instance sandbox. It is a local audit log, not a signed/tamper-evident one.
 // See docs/concepts/run-record.md for the full spec.
 package runrec
 
@@ -82,9 +82,6 @@ type Step struct {
 	Retrieval *Retrieval `json:"retrieval,omitempty"`
 	Bindings  []Binding  `json:"bindings,omitempty"`
 	Timing    *Timing    `json:"timing,omitempty"`
-
-	PrevHash string `json:"prev_hash"`
-	Hash     string `json:"hash"`
 }
 
 // Tokens is a prompt/completion/total triple.
@@ -128,8 +125,6 @@ type Outcome struct {
 	ChangedFiles   int     `json:"changed_files"`
 	Rollbackable   bool    `json:"rollbackable"`
 	SnapshotPath   string  `json:"snapshot_path,omitempty"`
-	PrevHash       string  `json:"prev_hash"`
-	RootHash       string  `json:"root_hash"`
 }
 
 // IndexEntry is one entry appended to runs/index.json.
@@ -169,34 +164,10 @@ type Timing struct {
 	TokensPerSec float64 `json:"tokens_per_sec"`
 }
 
-// --- hashing (deterministic: encoding/json in declared field order, own hash zeroed) ---
-
-// Sha256Hex hashes bytes; exported so the engine/snapshot can hash inputs and file content.
+// Sha256Hex hashes bytes; used for the change manifest and per-artifact content hashes (input/output).
 func Sha256Hex(b []byte) string {
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
-}
-
-func canonical(v any) []byte {
-	b, _ := json.Marshal(v)
-	return b
-}
-
-// HashMeta is the chain genesis (meta has no hash field of its own).
-func HashMeta(m Meta) string { return Sha256Hex(canonical(m)) }
-
-// Hash computes a step's hash with its own Hash field zeroed (PrevHash is included, binding the chain).
-func (s Step) computeHash() string {
-	c := s
-	c.Hash = ""
-	return Sha256Hex(canonical(c))
-}
-
-// computeRoot computes the outcome root hash with RootHash zeroed.
-func (o Outcome) computeRoot() string {
-	c := o
-	c.RootHash = ""
-	return Sha256Hex(canonical(c))
 }
 
 // --- IO (through the instance sandbox; all paths land under runs/) ---
@@ -211,19 +182,16 @@ func writePretty(inst *instance.Instance, rel string, v any) error {
 	return inst.WriteFile(rel, string(b)+"\n")
 }
 
-// WriteMeta writes meta.json and returns the genesis hash for the chain.
-func WriteMeta(inst *instance.Instance, m Meta) (string, error) {
+// WriteMeta writes meta.json.
+func WriteMeta(inst *instance.Instance, m Meta) error {
 	m.SchemaVersion = SchemaVersion
-	return HashMeta(m), writePretty(inst, runDir(m.RunID)+"/meta.json", m)
+	return writePretty(inst, runDir(m.RunID)+"/meta.json", m)
 }
 
-// WriteStep finalizes a step's chain fields (schema, prev, hash) and writes step-NNN.json.
-// It returns the step's hash to carry as prevHash for the next step.
-func WriteStep(inst *instance.Instance, runID string, s Step, prevHash string) (string, error) {
+// WriteStep writes step-NNN.json.
+func WriteStep(inst *instance.Instance, runID string, s Step) error {
 	s.SchemaVersion = SchemaVersion
-	s.PrevHash = prevHash
-	s.Hash = s.computeHash()
-	return s.Hash, writePretty(inst, fmt.Sprintf("%s/step-%03d.json", runDir(runID), s.Index), s)
+	return writePretty(inst, fmt.Sprintf("%s/step-%03d.json", runDir(runID), s.Index), s)
 }
 
 // WriteChanges writes changes.json (the rollback + provenance manifest).
@@ -234,11 +202,9 @@ func WriteChanges(inst *instance.Instance, runID string, changes []Change) error
 	return writePretty(inst, runDir(runID)+"/changes.json", changes)
 }
 
-// WriteOutcome finalizes the chain (prev + root hash) and writes outcome.json.
-func WriteOutcome(inst *instance.Instance, runID string, o Outcome, prevHash string) error {
+// WriteOutcome writes outcome.json.
+func WriteOutcome(inst *instance.Instance, runID string, o Outcome) error {
 	o.SchemaVersion = SchemaVersion
-	o.PrevHash = prevHash
-	o.RootHash = o.computeRoot()
 	return writePretty(inst, runDir(runID)+"/outcome.json", o)
 }
 

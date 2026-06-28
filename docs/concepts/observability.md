@@ -84,17 +84,13 @@ manifest. `/runs` lists the log; `/snapshot` takes a manual restore point.
 
 ## Honest scope
 
-The records carry a **hash chain** (each step binds the prior step's hash; the outcome carries a root
-hash), so casual or accidental tampering is detectable. But the chain is **not yet signed or witnessed**:
-anyone who can rewrite the files can also recompute the chain. So today the run record is a local audit
-log with an integrity check, not a tamper-evident proof. Two other limits: large prompts and outputs are
-truncated to the caps above, and rollback depth is bounded (older runs stay viewable but only the recent
-N per workspace are rollbackable).
-
-The cryptographically verifiable layer, signing the root hash, witnessing, and proving inclusion in a
-tamper-evident log, is the planned next layer (the ProofLayer / Zero Trust direction). The hash chain
-recorded now is the substrate that layer will sign. Until then, describe it as an audit log with an
-integrity check, not a verifiable one.
+This is a **local audit log**: enough to see what a run did, what it changed, and to undo it. It is
+deliberately not signed, hash-chained, or tamper-evident. It tells you what happened on this machine, not
+that the record has not been altered. The per-artifact content hashes it does keep (`input_sha256`,
+`output_sha256`, and the change manifest's before/after hashes) are there because rollback and diffing
+need them, not as a tamper-evidence claim. Two other limits: large prompts and outputs are truncated to
+the caps above, and rollback depth is bounded (older runs stay viewable but only the recent N per
+workspace are rollbackable).
 
 ## Cross-references
 

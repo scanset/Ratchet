@@ -35,19 +35,21 @@ A source is exactly one of:
 ```jsonc
 { "from": "<node-id | $input | $workspace | chain-input-slot>", "path": ".", "as": "slot", "max_chars": 4000 }
 { "ref":  "<library>", "id": "<entry-id>",            "as": "slot", "max_chars": 2000 }   // a fixed entry, always present
-{ "search": "<library>", "query": "{{ task }}", "k": 2, "as": "refs", "max_chars": 2000 } // a templated retrieval
+{ "search": "<library | {{ slot }}>", "query": "{{ task }}", "k": 2, "as": "refs", "max_chars": 2000 } // a templated retrieval
 ```
 
 - **`from`** binds a prior node's recorded output (or a run seed: `$input`, `$workspace`, or a slot the
   chain declared in its own `inputs`). `path` selects within the value: `.` (or empty) is the whole
   output; any other value is a **JSON pointer** into it (a bare field name like `cppref_q` is treated as
-  `/cppref_q`). So a `generate` node with an `output_schema` can emit several fields and downstream
-  bindings pull each one - e.g. a "plan" node emits one query per knowledge base and the next node
-  routes each into its own `search`. Non-JSON output or a missing field yields an empty slot.
+  `/cppref_q`; **array indices work too**, e.g. `selections/0/kb`). So a `generate` node with an
+  `output_schema` can emit several fields - or an array of objects - and downstream bindings pull each one:
+  a "plan" node emits one query per knowledge base (or a `selections[]` array of `{kb, query}`) and the
+  next node routes each into its own `search`. Non-JSON output or a missing field yields an empty slot.
 - **`ref`** binds a fixed knowledge entry - always injected, for constant constraints (e.g. "stay in
   C# 5").
-- **`search`** binds the top-`k` hits of a query against a knowledge library. Because bindings resolve
-  in order, a `search` query may reference an already-resolved slot (`"{{ task }}"`).
+- **`search`** binds the top-`k` hits of a query against a knowledge library. Both the **library and the
+  query** are rendered over the slots resolved so far, so each may reference an already-resolved slot: a
+  literal library (`"search": "kb"`) or a runtime target (`"search": "{{ kb }}"`) chosen by a plan node.
 
 Example - a repair node binds *only* the three things it needs, each from a named origin:
 

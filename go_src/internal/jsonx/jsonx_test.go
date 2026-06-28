@@ -68,6 +68,22 @@ func TestPointer(t *testing.T) {
 	}
 }
 
+func TestPointerArrayIndex(t *testing.T) {
+	root := mustParse(t, `{"selections":[{"kb":"cache","query":"ttl"},{"kb":"concurrency","query":"fanin"}]}`)
+	if got := Pointer(root, "/selections/0/kb"); got != "cache" {
+		t.Fatalf("selections/0/kb: want cache, got %v", got)
+	}
+	if got := Pointer(root, "/selections/1/query"); got != "fanin" {
+		t.Fatalf("selections/1/query: want fanin, got %v", got)
+	}
+	if got := Pointer(root, "/selections/9/kb"); got != nil {
+		t.Fatalf("out-of-range index: want nil, got %v", got)
+	}
+	if got := Pointer(root, "/selections/x/kb"); got != nil {
+		t.Fatalf("non-numeric array token: want nil, got %v", got)
+	}
+}
+
 func TestNumberFidelity(t *testing.T) {
 	// whole numbers serialize without a trailing ".0"
 	if got := Serialize(Obj("k", 3)); !strings.Contains(got, `"k":3`) {

@@ -177,12 +177,11 @@ func RecordPoint(inst *instance.Instance, kind, wsAbs, wsName, parentID, ratchet
 		RunID: id, Kind: kind, ParentRunID: parentID, Ratchet: ratchet, EngineVersion: engineVer,
 		ChainID: kind, Caller: caller, Workspace: wsName, Started: now.Format(time.RFC3339),
 	}
-	prev, err := runrec.WriteMeta(inst, m)
-	if err != nil {
+	if err := runrec.WriteMeta(inst, m); err != nil {
 		return "", err
 	}
 	out := runrec.Outcome{Outcome: kind, Finished: now.Format(time.RFC3339), Rollbackable: true, SnapshotPath: SnapshotRel(id)}
-	if err := runrec.WriteOutcome(inst, id, out, prev); err != nil {
+	if err := runrec.WriteOutcome(inst, id, out); err != nil {
 		return "", err
 	}
 	_ = runrec.AppendIndex(inst, runrec.IndexEntry{RunID: id, Time: m.Started, Kind: kind, Chain: kind, Workspace: wsName, Outcome: kind, Rollbackable: true})

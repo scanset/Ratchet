@@ -44,6 +44,34 @@ func TestTokens(t *testing.T) {
 	}
 }
 
+func TestTokensStemming(t *testing.T) {
+	cases := map[string]string{
+		"channels": "channel", "channel": "channel", // plural collapses to singular
+		"matches": "match", "indexing": "index", "policies": "policy",
+		"goroutines": "goroutine", "goroutine": "goroutine", // "es" not over-stripped (no sibilant)
+		"boxes": "box", "dishes": "dish", // "es" stripped after a sibilant
+		"is": "is", "bus": "bus", "css": "css", // short words / <3 remainder untouched
+	}
+	for in, want := range cases {
+		got := Tokens(in)
+		if len(got) != 1 || got[0] != want {
+			t.Fatalf("Tokens(%q) = %v, want [%q]", in, got, want)
+		}
+	}
+}
+
+// A query in one word form must retrieve a doc written in another (the routing gap stemming closes).
+func TestBm25MatchesAcrossWordForms(t *testing.T) {
+	docs := []Doc{
+		{ID: "fanin.md", Title: "fan-in", Text: "merge several channel into one channel using goroutines"},
+		{ID: "ring.md", Title: "ring buffer", Text: "a fixed size circular buffer of elements"},
+	}
+	scored := Bm25Scored(docs, "merging channels") // plural query vs singular doc
+	if len(scored) == 0 || docs[scored[0].Index].ID != "fanin.md" {
+		t.Fatalf("expected fanin.md for 'merging channels', got %v", scored)
+	}
+}
+
 // Indexer roundtrip: build a content manifest, then load it back as a path->entry map.
 func TestKbManifestRoundtrip(t *testing.T) {
 	dir := t.TempDir()

@@ -81,30 +81,28 @@ func (e *Engine) WithCaller(c string) *Engine {
 
 // runContext holds the per-run state the records and rollback need.
 type runContext struct {
-	runID    string
-	meta     runrec.Meta
-	prevHash string
-	wsAbs    string
-	wsName   string
-	snapped  bool
-	startT   time.Time
-	tok0     int64
-	pTok0    int64
-	eTok0    int64
-	visits   map[string]int // generate node id -> execution count (for first-pass / repair metrics)
-	gateN    int            // gated (action/foreach) executions
-	gateOK   int            // gated executions that passed
-	repairs  int            // generate re-executions (repair_index > 0)
-	stepN    int            // last step number written
+	runID   string
+	meta    runrec.Meta
+	wsAbs   string
+	wsName  string
+	snapped bool
+	startT  time.Time
+	tok0    int64
+	pTok0   int64
+	eTok0   int64
+	visits  map[string]int // generate node id -> execution count (for first-pass / repair metrics)
+	gateN   int            // gated (action/foreach) executions
+	gateOK  int            // gated executions that passed
+	repairs int            // generate re-executions (repair_index > 0)
+	stepN   int            // last step number written
 }
 
-// recordStep finalizes a step's timing and hash-chain fields and writes step-NNN.json.
+// recordStep fills a step's index/timing fields and writes step-NNN.json.
 func (e *Engine) recordStep(rc *runContext, n int, start time.Time, st runrec.Step) {
 	st.Index = n
 	st.Started = start.Format(time.RFC3339)
 	st.DurationMS = time.Since(start).Milliseconds()
-	h, _ := runrec.WriteStep(e.inst, rc.runID, st, rc.prevHash)
-	rc.prevHash = h
+	_ = runrec.WriteStep(e.inst, rc.runID, st)
 	rc.stepN = n
 }
 
@@ -166,8 +164,7 @@ func (e *Engine) Run(c *model.Chain, input, workspace string) Result {
 		OSArch:        runtime.GOOS + "/" + runtime.GOARCH,
 		Started:       now.Format(time.RFC3339),
 	}
-	metaHash, _ := runrec.WriteMeta(e.inst, rc.meta)
-	rc.prevHash = metaHash
+	_ = runrec.WriteMeta(e.inst, rc.meta)
 
 	maxSteps := c.MaxSteps
 	if maxSteps <= 0 {
@@ -388,7 +385,7 @@ func (e *Engine) finish(res *Result, rc *runContext, c *model.Chain, step, lastO
 		Rollbackable:   rollbackable,
 		SnapshotPath:   snapRel,
 	}
-	_ = runrec.WriteOutcome(e.inst, rc.runID, o, rc.prevHash)
+	_ = runrec.WriteOutcome(e.inst, rc.runID, o)
 	_ = runrec.AppendIndex(e.inst, runrec.IndexEntry{
 		RunID:        rc.runID,
 		Time:         rc.meta.Started,
@@ -524,7 +521,8 @@ func (e *Engine) resolveRef(ib model.InputBinding) string {
 }
 
 func (e *Engine) resolveSearch(ib model.InputBinding, slots map[string]string) string {
-	dir := e.libDir(ib.Lib)
+	lib := render(ib.Lib, slots) // target library may be a slot (e.g. "{{kb}}"), resolved at runtime
+	dir := e.libDir(lib)
 	if dir == "" {
 		return ""
 	}
@@ -533,7 +531,7 @@ func (e *Engine) resolveSearch(ib model.InputBinding, slots map[string]string) s
 		return ""
 	}
 	cacheKey := ""
-	if kb := e.inst.Knowledge().Find(ib.Lib); kb != nil {
+	if kb := e.inst.Knowledge().Find(lib); kb != nil {
 		cacheKey = kb.Name
 	}
 	k := ib.K

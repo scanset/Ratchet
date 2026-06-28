@@ -53,6 +53,28 @@ func Doctor(inst *instance.Instance, url string) int {
 		}
 	}
 
+	// If no per-KB requirement is declared, validate every registered knowledge base automatically -
+	// so a catalog-driven registry (kb/catalog.json) gets the same coverage without a requirement each.
+	hasKbReq := false
+	for _, o := range reqs {
+		if r := jsonx.AsObject(o); r != nil {
+			if _, ok := jsonx.GetString(r, "kb"); ok {
+				hasKbReq = true
+				break
+			}
+		}
+	}
+	if !hasKbReq {
+		for _, kb := range inst.Knowledge().Bases {
+			if ok, detail := checkKb(inst, kb.Name); ok {
+				report("ok", "KB "+kb.Name, detail)
+			} else {
+				report("MISS", "KB "+kb.Name, detail)
+				problems++
+			}
+		}
+	}
+
 	fmt.Println()
 	if problems > 0 {
 		fmt.Printf("doctor: %d problem(s), %d warning(s)\n", problems, warns)
