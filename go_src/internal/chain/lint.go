@@ -164,12 +164,41 @@ func Lint(c *model.Chain, toolNames []string) []string {
 			so, ok := order[ib.From]
 			if !ok {
 				p = append(p, "node '"+a.ID+"': inputs.from '"+ib.From+"' is not reachable from entry")
-			} else if haveCo && so >= co {
+			} else if haveCo && so >= co && !reaches(c, ib.From, a.ID) {
+				// A back-reference is legitimate when it closes a feedback CYCLE: the producer can also
+				// reach the consumer (so on the loop-back the producer ran first; empty on the first
+				// pass). Otherwise it is a genuine forward-reference that would always be empty.
 				p = append(p, "node '"+a.ID+"': inputs.from '"+ib.From+"' is not a predecessor")
 			}
 		}
 	}
 	return p
+}
+
+// reaches reports whether `to` is reachable from `from` by following flow edges (success/failure/
+// transitions/foreach). Used to recognize feedback cycles, where a node binds a downstream node's output
+// (empty on the first pass, populated when the flow loops back).
+func reaches(c *model.Chain, from, to string) bool {
+	seen := map[string]bool{from: true}
+	q := []string{from}
+	for len(q) > 0 {
+		cur := q[0]
+		q = q[1:]
+		a, ok := c.Actions[cur]
+		if !ok {
+			continue
+		}
+		for _, n := range a.Edges() {
+			if n == to {
+				return true
+			}
+			if n != "" && !seen[n] {
+				seen[n] = true
+				q = append(q, n)
+			}
+		}
+	}
+	return false
 }
 
 // checkPrompt: token budget + the slot-reference contract: every {{ slot }} a prompt names must be a
