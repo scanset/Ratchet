@@ -27,6 +27,27 @@ module: core        # optional: which folder under src/ this unit goes in
 The model reads all the specs (in any order, even with slightly inconsistent names) and works out the
 plan. Keep `name`, `intent`, and `behavior` sharp - they are the prompt.
 
+## Write specs that hold
+
+The spec is where you make the decisions the model cannot. A vague spec does not get "filled in sensibly" -
+the model guesses, and on a test-driven flow its guess disagrees with the test's guess, so the gate never
+closes. What makes a spec hold:
+
+- **State the invariant, not just the prose.** "compress runs" is a wish; "a run of byte `b` length `n`
+  (1..255) encodes to the two bytes `n,b`; `Decode(Encode(s)) == s` for all `s`" is a contract the Oracle
+  can check. Behaviour lines become assertions almost verbatim - write them as the property you want proven.
+- **Disambiguate anything with two valid readings.** If a behaviour could be implemented two correct ways
+  (which encoding? which rounding? what order?), pin one. Ambiguity is the single most common cause of a
+  stuck gate, and it is *your* gap to close, not a model weakness.
+- **Name the edge cases explicitly.** Zero, negative, empty, overflow, "key absent". An unstated edge is an
+  unspecified behaviour; say what happens (and whether it errors or is silently handled - "never panics").
+- **Pin the mechanism only when it is part of the contract.** Say "safe for concurrent use (no data race
+  under `-race`)" when concurrency is required; leave `mutex` vs `atomic` to the model when it is not.
+
+This is the same instinct as binding the real API: don't ask the model to remember or invent the contract -
+state it. See [Methodologies](../concepts/methodologies.md) for why an ambiguous spec masquerades as a model
+failure, and which residual a stalled step actually is.
+
 ## How to run it
 
 ```
